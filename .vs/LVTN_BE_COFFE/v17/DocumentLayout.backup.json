@@ -1,0 +1,54 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\GITHUB\\LVTN_BE_COFFE\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{CAF3264E-DCF4-4EEE-B8B7-5280950D1ADB}|LVTN_BE_COFFE\\LVTN_BE_COFFE.csproj|d:\\github\\lvtn_be_coffe\\lvtn_be_coffe\\lvtn_be_coffe.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{CAF3264E-DCF4-4EEE-B8B7-5280950D1ADB}|LVTN_BE_COFFE\\LVTN_BE_COFFE.csproj|solutionrelative:lvtn_be_coffe\\lvtn_be_coffe.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CAF3264E-DCF4-4EEE-B8B7-5280950D1ADB}|LVTN_BE_COFFE\\LVTN_BE_COFFE.csproj|d:\\github\\lvtn_be_coffe\\lvtn_be_coffe\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CAF3264E-DCF4-4EEE-B8B7-5280950D1ADB}|LVTN_BE_COFFE\\LVTN_BE_COFFE.csproj|solutionrelative:lvtn_be_coffe\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "LVTN_BE_COFFE",
+              "DocumentMoniker": "D:\\GITHUB\\LVTN_BE_COFFE\\LVTN_BE_COFFE\\LVTN_BE_COFFE.csproj",
+              "RelativeDocumentMoniker": "LVTN_BE_COFFE\\LVTN_BE_COFFE.csproj",
+              "ToolTip": "D:\\GITHUB\\LVTN_BE_COFFE\\LVTN_BE_COFFE\\LVTN_BE_COFFE.csproj",
+              "RelativeToolTip": "LVTN_BE_COFFE\\LVTN_BE_COFFE.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABoAAAAqAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2025-09-03T15:01:25.274Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Program.cs",
+              "DocumentMoniker": "D:\\GITHUB\\LVTN_BE_COFFE\\LVTN_BE_COFFE\\Program.cs",
+              "RelativeDocumentMoniker": "LVTN_BE_COFFE\\Program.cs",
+              "ToolTip": "D:\\GITHUB\\LVTN_BE_COFFE\\LVTN_BE_COFFE\\Program.cs",
+              "RelativeToolTip": "LVTN_BE_COFFE\\Program.cs",
+              "ViewState": "AgIAAAkAAAAAAAAAAAAgwA4AAAAVAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-03T14:56:49.16Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

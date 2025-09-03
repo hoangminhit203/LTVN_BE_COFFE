@@ -1,0 +1,6 @@
+@LVTN_BE_COFFE_HostAddress = http://localhost:5288
+
+GET {{LVTN_BE_COFFE_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
