@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\GITHUB\\LVTN_BE_COFFE\\LVTN_BE_COFFE\\LVTN_BE_COFFE.csproj": {}
+    "D:\\GITHUB\\LTVN_BE_COFFE\\LVTN_BE_COFFE\\LVTN_BE_COFFE.csproj": {}
   },
   "projects": {
-    "D:\\GITHUB\\LVTN_BE_COFFE\\LVTN_BE_COFFE\\LVTN_BE_COFFE.csproj": {
+    "D:\\GITHUB\\LTVN_BE_COFFE\\LVTN_BE_COFFE\\LVTN_BE_COFFE.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\GITHUB\\LVTN_BE_COFFE\\LVTN_BE_COFFE\\LVTN_BE_COFFE.csproj",
+        "projectUniqueName": "D:\\GITHUB\\LTVN_BE_COFFE\\LVTN_BE_COFFE\\LVTN_BE_COFFE.csproj",
         "projectName": "LVTN_BE_COFFE",
-        "projectPath": "D:\\GITHUB\\LVTN_BE_COFFE\\LVTN_BE_COFFE\\LVTN_BE_COFFE.csproj",
+        "projectPath": "D:\\GITHUB\\LTVN_BE_COFFE\\LVTN_BE_COFFE\\LVTN_BE_COFFE.csproj",
         "packagesPath": "C:\\Users\\ADmin\\.nuget\\packages\\",
-        "outputPath": "D:\\GITHUB\\LVTN_BE_COFFE\\LVTN_BE_COFFE\\obj\\",
+        "outputPath": "D:\\GITHUB\\LTVN_BE_COFFE\\LVTN_BE_COFFE\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

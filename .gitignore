@@ -1,0 +1,20 @@
+# Thư mục VS cache
+.vs/
+*.vscode/
+*.user
+*.suo
+
+# Cache database của VS
+*.db
+*.db-shm
+*.db-wal
+
+# Backup & layout
+*.backup.json
+*.json
+*.bin
+*.v2
+
+# Các file build tạm
+bin/
+obj/

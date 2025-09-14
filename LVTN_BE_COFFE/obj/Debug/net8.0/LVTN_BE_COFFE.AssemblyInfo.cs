@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("LVTN_BE_COFFE")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a0f0fc0da98c8e04af8e4c73f82d781eaa043ce5")]
 [assembly: System.Reflection.AssemblyProductAttribute("LVTN_BE_COFFE")]
 [assembly: System.Reflection.AssemblyTitleAttribute("LVTN_BE_COFFE")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
