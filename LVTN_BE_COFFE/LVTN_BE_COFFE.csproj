@@ -12,9 +12,15 @@
     <PackageReference Include="CloudinaryDotNet" Version="1.27.7" />
     <PackageReference Include="JWT" Version="11.0.0" />
     <PackageReference Include="MailKit" Version="4.13.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.14" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.6" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.14" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.14" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.14">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.14" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.14">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
@@ -24,12 +30,9 @@
 
   <ItemGroup>
     <Folder Include="Domain\Common\" />
-    <Folder Include="Domain\IServices\" />
     <Folder Include="Domain\ModelShared\NewFolder\" />
-    <Folder Include="Domain\VModel\" />
     <Folder Include="Middleware\" />
     <Folder Include="Services\Helpers\" />
-    <Folder Include="Services\Services\" />
   </ItemGroup>
 
 </Project>
