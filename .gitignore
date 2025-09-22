@@ -18,3 +18,15 @@
 # Các file build tạm
 bin/
 obj/
+# Ignore build folders
+bin/
+obj/
+
+# Ignore cache files
+*.cache
+
+# Ignore user-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
