@@ -1,6 +1,5 @@
 ﻿using LVTN_BE_COFFE.Domain.IServices;
 using LVTN_BE_COFFE.Infrastructures.Entities;
-using LVTN_BE_COFFE.Mapper;
 using LVTN_BE_COFFE.Services.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -16,12 +15,11 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 //  Các gói Services
 builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IProductService, ProductService>();
+
 // Add DbContext
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-// đăng ký AutoMapper
-builder.Services.AddAutoMapper(typeof(ProductMapper));
+
 // Identity
 builder.Services.AddIdentity<IdentityUser, IdentityRole>()
     .AddEntityFrameworkStores<AppDbContext>()

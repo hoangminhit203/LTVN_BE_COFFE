@@ -455,4 +455,3 @@ C:\Users\LapTop\Desktop\LTVN_BE_COFFE\LVTN_BE_COFFE\obj\Debug\net8.0\LVTN_BE_COF
 C:\Users\LapTop\Desktop\LTVN_BE_COFFE\LVTN_BE_COFFE\obj\Debug\net8.0\ref\LVTN_BE_COFFE.dll
 C:\Users\LapTop\Desktop\LTVN_BE_COFFE\LVTN_BE_COFFE\bin\Debug\net8.0\AutoMapper.Extensions.Microsoft.DependencyInjection.dll
 C:\Users\LapTop\Desktop\LTVN_BE_COFFE\LVTN_BE_COFFE\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
-D:\GITHUB\LTVN_BE_COFFE\LVTN_BE_COFFE\bin\Debug\net8.0\AutoMapper.Extensions.Microsoft.DependencyInjection.dll

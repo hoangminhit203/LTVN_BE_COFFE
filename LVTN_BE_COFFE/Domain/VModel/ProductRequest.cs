@@ -9,6 +9,6 @@ namespace LVTN_BE_COFFE.Domain.VModel
         public string Name { get; set; }
         public decimal BasePrice { get; set; }// giá cơ bản
         public bool IsActive { get; set; }
-        public ProductType ProductType { get; set; } // đay là lí do nó lấy hết product type trong product request
+        public ProductType ProductType { get; set; }
     }
 }

@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "D:\\GITHUB\\LTVN_BE_COFFE\\LVTN_BE_COFFE\\LVTN_BE_COFFE.csproj": {}
+    "C:\\Users\\LapTop\\Desktop\\LTVN_BE_COFFE\\LVTN_BE_COFFE\\LVTN_BE_COFFE.csproj": {}
   },
   "projects": {
-    "D:\\GITHUB\\LTVN_BE_COFFE\\LVTN_BE_COFFE\\LVTN_BE_COFFE.csproj": {
+    "C:\\Users\\LapTop\\Desktop\\LTVN_BE_COFFE\\LVTN_BE_COFFE\\LVTN_BE_COFFE.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\GITHUB\\LTVN_BE_COFFE\\LVTN_BE_COFFE\\LVTN_BE_COFFE.csproj",
+        "projectUniqueName": "C:\\Users\\LapTop\\Desktop\\LTVN_BE_COFFE\\LVTN_BE_COFFE\\LVTN_BE_COFFE.csproj",
         "projectName": "LVTN_BE_COFFE",
-        "projectPath": "D:\\GITHUB\\LTVN_BE_COFFE\\LVTN_BE_COFFE\\LVTN_BE_COFFE.csproj",
-        "packagesPath": "C:\\Users\\ADmin\\.nuget\\packages\\",
-        "outputPath": "D:\\GITHUB\\LTVN_BE_COFFE\\LVTN_BE_COFFE\\obj\\",
+        "projectPath": "C:\\Users\\LapTop\\Desktop\\LTVN_BE_COFFE\\LVTN_BE_COFFE\\LVTN_BE_COFFE.csproj",
+        "packagesPath": "C:\\Users\\LapTop\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\LapTop\\Desktop\\LTVN_BE_COFFE\\LVTN_BE_COFFE\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\ADmin\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\LapTop\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
