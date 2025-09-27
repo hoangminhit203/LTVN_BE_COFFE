@@ -7,6 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Domain\ModelShared\NewFolder\**" />
+    <Content Remove="Domain\ModelShared\NewFolder\**" />
+    <EmbeddedResource Remove="Domain\ModelShared\NewFolder\**" />
+    <None Remove="Domain\ModelShared\NewFolder\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="AutoMapper" Version="15.0.1" />
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
     <PackageReference Include="CloudinaryDotNet" Version="1.27.7" />
@@ -26,13 +33,6 @@
     </PackageReference>
     <PackageReference Include="Microsoft.SqlServer.Server" Version="1.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Domain\Common\" />
-    <Folder Include="Domain\ModelShared\NewFolder\" />
-    <Folder Include="Middleware\" />
-    <Folder Include="Services\Helpers\" />
   </ItemGroup>
 
 </Project>
