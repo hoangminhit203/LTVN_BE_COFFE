@@ -1,5 +1,7 @@
-﻿using LVTN_BE_COFFE.Domain.IServices;
+﻿using LVTN_BE_COFFE.Domain.Common;
+using LVTN_BE_COFFE.Domain.IServices;
 using LVTN_BE_COFFE.Infrastructures.Entities;
+using LVTN_BE_COFFE.Services.Helpers;
 using LVTN_BE_COFFE.Services.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -13,6 +15,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+//Add Token Service
+builder.Services.AddScoped<ITokenService, TokenService>();
 //  Các gói Services
 builder.Services.AddScoped<IAuthService, AuthService>();
 
@@ -21,9 +25,14 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Identity
-builder.Services.AddIdentity<IdentityUser, IdentityRole>()
+builder.Services.AddIdentity<AspNetUsers, IdentityRole>()
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
+//DEPENDENCY INJECTION
+builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+//builder.Services.AddSingleton<DeviceDetectionService>();
+builder.Services.AddSingleton<Globals>();
+builder.Services.AddScoped<IEmailSenderService, SendEmailService>();
 
 // JWT Config
 var jwtSettings = builder.Configuration.GetSection("Jwt");
@@ -83,12 +92,8 @@ builder.Services.AddSwaggerGen(c =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
+app.UseSwagger();
+app.UseSwaggerUI();
 app.UseHttpsRedirection();
 
 app.UseAuthentication(); 
