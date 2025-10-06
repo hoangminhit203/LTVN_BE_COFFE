@@ -18,14 +18,17 @@ builder.Services.AddSwaggerGen();
 //Add Token Service
 builder.Services.AddScoped<ITokenService, TokenService>();
 //  Các gói Services
-builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddTransient<IAspNetUsersService, AspNetUsersService>();
+builder.Services.AddTransient<IAspNetRolesService, AspNetRolesService>();
+builder.Services.AddTransient<IAuthService, AuthService>();
+builder.Services.AddTransient<ISysApiService, SysApiService>();
 
 // Add DbContext
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Identity
-builder.Services.AddIdentity<AspNetUsers, IdentityRole>()
+builder.Services.AddIdentity<AspNetUsers, AspNetRoles>()
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
 //DEPENDENCY INJECTION

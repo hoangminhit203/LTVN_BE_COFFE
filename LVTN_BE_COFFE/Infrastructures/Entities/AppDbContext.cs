@@ -1,38 +1,44 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using LVTN_BE_COFFE.Infrastructures.Entities;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
-namespace LVTN_BE_COFFE.Infrastructures.Entities
+public class AppDbContext : IdentityDbContext<AspNetUsers>
 {
-    public class AppDbContext : IdentityDbContext<AspNetUsers>
+    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
-        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
-        // Bảng sản phẩm
-        public DbSet<Products> Products { get; set; }
+    }
 
-        // Bảng loại sản phẩm (trà sữa, topping, đồ ăn kèm…)
-        public DbSet<ProductType> ProductTypes { get; set; }
+    public DbSet<AspNetRoles> AspNetRoles { get; set; } = null!;
+    public DbSet<AspNetUsers> AspNetUsers { get; set; } = null!;
+    public DbSet<Products> Products { get; set; }
 
-        // Bảng chi nhánh (mỗi quán/chi nhánh)
-        public DbSet<Branch> Branches { get; set; }
-        public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
-        protected override void OnModelCreating(ModelBuilder builder)
-        {
-            base.OnModelCreating(builder);
+    //SYSTEM
+    public DbSet<SysApi> SysApis { get; set; } = null!;
+    //public DbSet<SysConfiguration> SysConfigurations { get; set; } = null!;
+    //public DbSet<SysFile> SysFile { get; set; } = null!;
+    //public DbSet<SysFunction> SysFunctions { get; set; } = null!;
+    //public DbSet<SysLanguage> SysLanguage { get; set; } = null!;
+    //public DbSet<SysStatisticalAccess> SysStatisticalAccesses { get; set; } = null!;
+    public DbSet<RefreshToken> RefreshTokens { get; set; }
 
-            // Quan hệ: ProductType 1 - nhiều Products
-            builder.Entity<ProductType>()
-                .HasMany(pt => pt.Products)
-                .WithOne(p => p.ProductType)
-                .HasForeignKey(p => p.ProductTypeId)
-                .OnDelete(DeleteBehavior.Restrict);
+    protected override void OnModelCreating(ModelBuilder builder)
+    {
+        base.OnModelCreating(builder);
 
-            // Quan hệ: Branch 1 - nhiều Products
-            builder.Entity<Branch>()
-                .HasMany(b => b.Products)
-                .WithOne(p => p.Branch)
-                .HasForeignKey(p => p.BranchId)
-                .OnDelete(DeleteBehavior.Cascade);
-        }
+        // Cấu hình mối quan hệ nếu cần
+        builder.Entity<Products>()
+            .HasOne(p => p.ProductType)
+            .WithMany(pt => pt.Products)
+            .HasForeignKey(p => p.ProductTypeId);
+
+        builder.Entity<Products>()
+            .HasOne(p => p.Branch)
+            .WithMany(b => b.Products)
+            .HasForeignKey(p => p.BranchId);
+
+        builder.Entity<RefreshToken>()
+            .HasOne(rt => rt.User)
+            .WithMany(u => u.RefreshTokens)
+            .HasForeignKey(rt => rt.UserId);
     }
 }
