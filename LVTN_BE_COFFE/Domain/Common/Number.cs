@@ -1,6 +1,6 @@
 ﻿namespace LVTN_BE_COFFE.Domain.Common
 {
-    public class Number
+    public static class Numbers
     {
         public const int One = 1;
         public struct Calendar
