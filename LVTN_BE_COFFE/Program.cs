@@ -1,5 +1,6 @@
 ﻿using LVTN_BE_COFFE.Domain.Common;
 using LVTN_BE_COFFE.Domain.IServices;
+using LVTN_BE_COFFE.Domain.Ultilities;
 using LVTN_BE_COFFE.Infrastructures.Entities;
 using LVTN_BE_COFFE.Services.Helpers;
 using LVTN_BE_COFFE.Services.Services;
@@ -11,34 +12,48 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// ---------------------------
+// 1️⃣ Add basic services
+// ---------------------------
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-//Add Token Service
+
+// ---------------------------
+// 2️⃣ Register custom services (DI)
+// ---------------------------
 builder.Services.AddScoped<ITokenService, TokenService>();
-//  Các gói Services
 builder.Services.AddTransient<IAspNetUsersService, AspNetUsersService>();
 builder.Services.AddTransient<IAspNetRolesService, AspNetRolesService>();
 builder.Services.AddTransient<IAuthService, AuthService>();
 builder.Services.AddTransient<ISysApiService, SysApiService>();
+builder.Services.AddScoped<IEmailSenderService, SendEmailService>();
+builder.Services.AddSingleton<Globals>();
+builder.Services.AddHttpContextAccessor();
 
-// Add DbContext
+// ---------------------------
+// 3️⃣ Add DbContext + Identity
+// ---------------------------
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Identity
 builder.Services.AddIdentity<AspNetUsers, AspNetRoles>()
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
-//DEPENDENCY INJECTION
-builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-//builder.Services.AddSingleton<DeviceDetectionService>();
-builder.Services.AddSingleton<Globals>();
-builder.Services.AddScoped<IEmailSenderService, SendEmailService>();
 
-// JWT Config
-var jwtSettings = builder.Configuration.GetSection("Jwt");
+// ---------------------------
+// 4️⃣ JWT Configuration
+// ---------------------------
+builder.Services.Configure<JwtSettings>(
+    builder.Configuration.GetSection("JwtSettings")); // cho TokenService
+var jwtSection = builder.Configuration.GetSection("Jwt");
+string? key = jwtSection["Key"];
+string? issuer = jwtSection["Issuer"];
+string? audience = jwtSection["Audience"];
+
+if (string.IsNullOrEmpty(key))
+    throw new Exception("JWT Key is missing in configuration (appsettings.Development.json).");
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -52,16 +67,28 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
-        ValidIssuer = jwtSettings["Issuer"],
-        ValidAudience = jwtSettings["Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(jwtSettings["Key"]))
+        ValidIssuer = issuer,
+        ValidAudience = audience,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key))
     };
 });
 
 builder.Services.AddAuthorization();
 
-// Swagger config with JWT
+// ---------------------------
+// 5️⃣ Session (optional but useful)
+// ---------------------------
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
+// ---------------------------
+// 6️⃣ Swagger with JWT
+// ---------------------------
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new() { Title = "LVTN_BE_COFFE", Version = "v1" });
@@ -73,7 +100,7 @@ builder.Services.AddSwaggerGen(c =>
         Scheme = "Bearer",
         BearerFormat = "JWT",
         In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-        Description = "Nhập 'Bearer' [space] + token. \n\nVí dụ: `Bearer abc123xyz`"
+        Description = "Nhập 'Bearer' [space] + token.\n\nVí dụ: `Bearer abc123xyz`"
     });
 
     c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
@@ -92,16 +119,21 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+// ---------------------------
+// 7️⃣ Build + Middleware
+// ---------------------------
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Use Swagger always (for Dev)
 app.UseSwagger();
 app.UseSwaggerUI();
+
 app.UseHttpsRedirection();
 
-app.UseAuthentication(); 
+app.UseAuthentication();
 app.UseAuthorization();
 
+app.UseSession();
 app.MapControllers();
 
 app.Run();
