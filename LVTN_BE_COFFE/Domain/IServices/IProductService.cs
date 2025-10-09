@@ -5,12 +5,12 @@ namespace LVTN_BE_COFFE.Domain.IServices
 {
     public interface IProductService
     {
-        Task<ProductResponse?> CreateProduct(ProductRequest request);
-        Task<ProductResponse?> UpdateProduct(ProductRequest request, int productId);
-        Task<bool?> DeleteProduct(int productId); // Delete nên trả bool thay vì Products
-        Task<List<ProductResponse?>> GetAllProducts();
+        Task<ProductResponse?> CreateProduct(ProductCreateVModel request);
+        Task<ProductResponse?> UpdateProduct(ProductUpdateVModel request, int Id);
+        Task<bool> DeleteProduct(int productId); // Delete nên trả bool thay vì Products
+        Task<List<ProductResponse>> GetAllProducts();
         Task<ProductResponse?> GetProduct(int productId);
-        Task<bool> FindByName(string name);
+        Task<ProductResponse?> FindByName(string name);
 
     }
 }

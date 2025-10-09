@@ -9,12 +9,15 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddDistributedMemoryCache();
+
 //Add Token Service
 builder.Services.AddScoped<ITokenService, TokenService>();
 //  Các gói Services
@@ -34,6 +37,21 @@ builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 builder.Services.AddSingleton<Globals>();
 builder.Services.AddScoped<IEmailSenderService, SendEmailService>();
 
+//Product
+builder.Services.AddScoped<IProductService, ProductService>();
+//Branch
+builder.Services.AddScoped<IBranchService, BranchService>();
+//ProductType
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+
+
+//session
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
 // JWT Config
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 builder.Services.AddAuthentication(options =>
@@ -55,6 +73,8 @@ builder.Services.AddAuthentication(options =>
             Encoding.UTF8.GetBytes(jwtSettings["Key"]))
     };
 });
+
+
 
 builder.Services.AddAuthorization();
 
@@ -92,6 +112,9 @@ builder.Services.AddSwaggerGen(c =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+app.UseSession();
+app.UseHttpsRedirection();
+app.UseRouting();
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseHttpsRedirection();
