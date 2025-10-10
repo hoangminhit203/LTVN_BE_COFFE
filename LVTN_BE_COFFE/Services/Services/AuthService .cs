@@ -6,6 +6,12 @@ using LVTN_BE_COFFE.Infrastructures.Entities;
 using LVTN_BE_COFFE.Services.Helpers;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.IdentityModel.Tokens;
+using Org.BouncyCastle.Crypto.Macs;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+
 using System.Text;
 using static LVTN_BE_COFFE.Domain.Common.Strings;
 
@@ -89,7 +95,7 @@ namespace LVTN_BE_COFFE.Services.Services
             }
 
             var newUser = new AspNetUsers
-            {
+            {   
                 UserName = model.Email,
                 Email = model.Email,
                 CreatedDate = DateTime.UtcNow,
@@ -105,37 +111,50 @@ namespace LVTN_BE_COFFE.Services.Services
                 return response;
             }
 
-            var otpCode = OtpGenerator.GenerateOtpCode();
-            var otpExpiry = DateTime.UtcNow.AddMinutes(1);
-
-            _httpContextAccessor.HttpContext?.Session?.SetString("OtpCode", otpCode);
-            _httpContextAccessor.HttpContext?.Session?.SetString("OtpExpiry", otpExpiry.ToString("o"));
-
-            var scheme = _httpContextAccessor.HttpContext?.Request?.Scheme ?? "http";
-            var host = _httpContextAccessor.HttpContext?.Request?.Host.ToString() ?? "localhost";
-
-            var subject = "Your OTP Code";
-            var body = $"Your OTP code is {otpCode}. Please don't share it with anyone!";
-
-            var sendMailResult = await _emailSender.SendMailAsync(
-                fromEmail: "tranhoangngoc112@gmai.com",
-                fromPassWord: "ngoc123456",
-                toEmail: newUser.Email,
-                sendMailTitle: subject,
-                sendMailBody: body
-            );
-
-            if (!sendMailResult.IsSuccess)
+            try
             {
-                response.Message = sendMailResult.Message;
+                var otpCode = OtpGenerator.GenerateOtpCode();
+                var otpExpiry = DateTime.UtcNow.AddMinutes(15); // Tăng thời gian từ 1 phút lên 15 phút
+
+                _httpContextAccessor.HttpContext?.Session?.SetString("OtpCode", otpCode);
+                _httpContextAccessor.HttpContext?.Session?.SetString("OtpExpiry", otpExpiry.ToString("o"));
+
+                var subject = "Your OTP Code for Account Activation";
+                var body = $@"
+                    <h3>Welcome to Our Coffee Shop!</h3>
+                    <p>Your OTP code is: <strong>{otpCode}</strong></p>
+                    <p>This code will expire in 15 minutes.</p>
+                    <p>Please don't share this code with anyone!</p>
+                ";
+
+                var sendMailResult = await _emailSender.SendMailAsync(
+                    fromEmail: "tranhoangngoc112@gmail.com", // ✅ Thay bằng email thực của bạn
+                    fromPassWord: "ngoc123456", // ✅ Thay bằng App Password thực
+                    toEmail: newUser.Email,
+                    sendMailTitle: subject,
+                    sendMailBody: body
+                );
+
+                if (!sendMailResult.IsSuccess)
+                {
+                    // ✅ Sửa lỗi logic - khi gửi email thất bại thì response cũng phải thất bại
+                    response.Message = $"Registration successful but failed to send confirmation email: {sendMailResult.Message}";
+                    response.IsSuccess = false;
+                    return response;
+                }
+
+                response.User = MapEntityToVModel(newUser);
+                response.Message = "Registration successful! Please check your email for the OTP code to activate your account.";
                 response.IsSuccess = true;
                 return response;
             }
-
-            response.User = MapEntityToVModel(newUser);
-            response.Message = Strings.Messages.RegistrationSuccessful;
-            response.IsSuccess = true;
-            return response;
+            catch (Exception ex)
+            {
+                // ✅ Thêm exception handling
+                response.Message = $"Registration successful but failed to send confirmation email: {ex.Message}";
+                response.IsSuccess = false;
+                return response;
+            }
         }
 
 
@@ -234,15 +253,21 @@ namespace LVTN_BE_COFFE.Services.Services
                 _httpContextAccessor.HttpContext?.Session?.SetString("OtpExpiry", otpExpiry.ToString("o"));
                 _httpContextAccessor.HttpContext?.Session?.SetString("UserEmail", user.Email);
 
-                var scheme = _httpContextAccessor.HttpContext?.Request?.Scheme ?? "http";
-                var host = _httpContextAccessor.HttpContext?.Request?.Host.ToString() ?? "localhost";
+                var subject = "Password Reset OTP Code";
+                var body = $@"
+                    <h3>Password Reset Request</h3>
+                    <p>Your OTP code for password reset is: <strong>{otpCode}</strong></p>
+                    <p>This code will expire in 30 minutes.</p>
+                    <p>If you didn't request this, please ignore this email.</p>
+                ";
 
-                var subject = "Your OTP Code";
-                var body = $"Your OTP code is {otpCode}. Please don't share it with anyone!";
+                // ✅ Sử dụng cấu hình từ appsettings.json
+                var senderEmail = _configuration["EmailSettings:SenderEmail"];
+                var senderPassword = _configuration["EmailSettings:SenderPassword"];
 
                 var sendMailResult = await _emailSender.SendMailAsync(
-                   fromEmail: "tranhoangngoc112@gmai.com",
-                   fromPassWord: "ngoc123456",
+                    fromEmail: senderEmail,
+                    fromPassWord: senderPassword,
                     toEmail: user.Email,
                     sendMailTitle: subject,
                     sendMailBody: body
@@ -250,7 +275,7 @@ namespace LVTN_BE_COFFE.Services.Services
 
                 if (!sendMailResult.IsSuccess)
                 {
-                    response.Message = Strings.Messages.InvalidEmailAddress;
+                    response.Message = $"Failed to send reset email: {sendMailResult.Message}";
                     response.IsSuccess = false;
                     return response;
                 }
@@ -260,9 +285,10 @@ namespace LVTN_BE_COFFE.Services.Services
                 response.IsSuccess = true;
                 return response;
             }
-            catch
+            catch (Exception ex)
             {
-                response.Message = Strings.Messages.ErrorSendingEmail;
+                response.Message = $"Error sending reset email: {ex.Message}";
+                response.IsSuccess = false;
                 return response;
             }
         }
