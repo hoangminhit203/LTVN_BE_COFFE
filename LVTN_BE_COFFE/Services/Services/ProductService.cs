@@ -1,96 +1,206 @@
-﻿using AutoMapper;
+﻿
 using LVTN_BE_COFFE.Domain.IServices;
 using LVTN_BE_COFFE.Domain.VModel;
 using LVTN_BE_COFFE.Infrastructures.Entities;
-using LVTN_BE_COFFE.Mapper;
 using Microsoft.EntityFrameworkCore;
 
 namespace LVTN_BE_COFFE.Services.Services
 {
     public class ProductService : IProductService
     {
-        private readonly IMapper _mapper;
         private readonly AppDbContext _context;
-        public ProductService(IMapper mapper)
-        {
-            _mapper = mapper;
-        }
-        public ProductService(AppDbContext context, IMapper mapper)
+
+        public ProductService(AppDbContext context)
         {
             _context = context;
-            _mapper = mapper;
         }
-        public async Task<ProductResponse?> CreateProduct(ProductRequest request)
+
+        public async Task<ProductResponse?> CreateProduct(ProductCreateVModel request)
         {
-            var exists= FindByName(request.Name);
-            if (exists==null)
+            var branch = await _context.Branches.FindAsync(request.BranchId);
+            if (branch == null)
             {
-                throw new Exception("Khong tìm thấy sản phẩm");
+                return null; // Hoặc ném ra ngoại lệ nếu cần
             }
-            var product = _mapper.Map<Products>(request);
-            //product.ProductId = Guid.NewGuid().ToString();
-            //product.CreatedAt = DateTime.UtcNow;
-
-            _context.Products.Add(product);
-            return _mapper.Map<ProductResponse>(request);
+            var findProduct = await _context.Products.FirstOrDefaultAsync(p => p.Name == request.Name);
+            if (findProduct != null)
+            {
+                return null; // Hoặc ném ra ngoại lệ nếu cần
+            }
+            var category = await _context.Categories.FindAsync(request.CategoryId);
+            if (category == null)
+            {
+                return null; // Hoặc ném ra ngoại lệ nếu cần
+            }
+            var newProduct = new Product
+            {
+                Sku = request.Sku,
+                Name = request.Name,
+                BasePrice = request.BasePrice,
+                IsActive = request.IsActive,
+                BranchId = request.BranchId,
+                CategoryId = request.CategoryId,
+                CreatedAt = DateTime.UtcNow
+            };
+            _context.Products.Add(newProduct);
+            await _context.SaveChangesAsync();
+            return new ProductResponse
+            {
+                ProductId = newProduct.ProductId,
+                Sku = newProduct.Sku,
+                Name = newProduct.Name,
+                BasePrice = newProduct.BasePrice,
+                IsActive = newProduct.IsActive,
+                BranchId = newProduct.BranchId,
+                CreatedAt = newProduct.CreatedAt,
+                Branch = new BranchResponse
+                {
+                    BranchId = branch.BranchId,
+                    Name = branch.Name,
+                    Address = branch.Address,
+                    PhoneNumber = branch.PhoneNumber
+                },
+                Category = new CategoryResponse
+                {
+                    CategoryId = category.CategoryId,
+                    Name = category.Name,
+                    CreatedAt = category.CreatedAt,
+                    UpdatedAt = category.UpdatedAt
+                }
+            };
         }
 
-        public async Task<bool?> DeleteProduct(int productId)
+        public async Task<bool> DeleteProduct(int productId)
         {
-            // Tìm sản phẩm trong DB
             var product = await _context.Products.FindAsync(productId);
             if (product == null)
-            {
-                return false; // Không tìm thấy
-            }
+                throw new Exception("Product not found!");
 
-            // Xóa sản phẩm
             _context.Products.Remove(product);
-            await _context.SaveChangesAsync();
-
+            _context.SaveChanges();
             return true;
         }
 
-        public async Task<bool> FindByName(string name)
+        public async Task<ProductResponse?> FindByName(string name)
         {
-            // tìm sản phẩm đảm bảo không phân biệt hoa thường
-            return await _context.Products
-                .AnyAsync(p => p.Name.ToLower() == name.ToLower());
+            var product = await _context.Products.FindAsync(name);
+            if (product == null)
+                throw new Exception("Product not found!");
+            return new ProductResponse
+            {
+                ProductId = product.ProductId,
+                Sku = product.Sku,
+                Name = product.Name,
+                BasePrice = product.BasePrice,
+                IsActive = product.IsActive,
+                BranchId = product.BranchId,
+                CreatedAt = product.CreatedAt,
+                UpdatedAt = product.UpdatedAt
+            };
+
         }
 
-        public async Task<List<ProductResponse?>> GetAllProducts()
+        public Task<List<ProductResponse>> GetAllProducts()
         {
-            // lấy all sản phẩm
-            var products = await _context.Products.ToListAsync();
-            return _mapper.Map<List<ProductResponse?>>(products);
+            return _context.Products.
+                Select(p => new ProductResponse{
+                ProductId = p.ProductId,
+                Sku = p.Sku,
+                Name = p.Name,
+                BasePrice = p.BasePrice,
+                IsActive = p.IsActive,
+                BranchId = p.BranchId,
+                CreatedAt = p.CreatedAt,
+                UpdatedAt = p.UpdatedAt,
+                Branch = new BranchResponse
+                {
+                    BranchId = p.Branch.BranchId,
+                    Name = p.Branch.Name,
+                    Address = p.Branch.Address,
+                    PhoneNumber = p.Branch.PhoneNumber
+                },
+                Category = new CategoryResponse
+                {
+                    CategoryId = p.Category.CategoryId,
+                    Name = p.Category.Name,
+                    CreatedAt = p.Category.CreatedAt,
+                    UpdatedAt = p.Category.UpdatedAt
+                }
+           })
+        .ToListAsync();
         }
 
         public async Task<ProductResponse?> GetProduct(int productId)
         {
-            //Lấy sản phẩm theo id
             var product = await _context.Products.FindAsync(productId);
-            return _mapper.Map<ProductResponse?>(product);
+            if (product == null)
+                throw new Exception("Product not found!");
+
+            return new ProductResponse
+            {
+                ProductId = product.ProductId,
+                Sku = product.Sku,
+                Name = product.Name,
+                BasePrice = product.BasePrice,
+                IsActive = product.IsActive,
+                BranchId = product.BranchId,
+                CreatedAt = product.CreatedAt,
+                UpdatedAt = product.UpdatedAt,
+                Branch = new BranchResponse
+                {
+                    BranchId = product.Branch.BranchId,
+                    Name = product.Branch.Name,
+                    Address = product.Branch.Address,
+                    PhoneNumber = product.Branch.PhoneNumber
+                },
+                Category = new CategoryResponse
+                {
+                    CategoryId = product.Category.CategoryId,
+                    Name = product.Category.Name,
+                    CreatedAt = product.Category.CreatedAt,
+                    UpdatedAt = product.Category.UpdatedAt
+                }
+            };
         }
 
-        public async Task<ProductResponse?> UpdateProduct(ProductRequest request, int productId)
+        public async Task<ProductResponse?> UpdateProduct(ProductUpdateVModel request, int Id)
         {
-            var product = await _context.Products.FindAsync(productId);
-
+            var product =await _context.Products.FindAsync(Id);
             if (product == null)
-            {
-                return null; // Không tìm thấy sản phẩm
-            }
-
-            // 2. Cập nhật dữ liệu từ request vào entity
-            _mapper.Map(request, product);
-            // 3. Cập nhật thời gian sửa đổi (nếu có field UpdatedAt)
-            product.UpdateAt = DateTime.UtcNow;
-
-            // 4. Lưu thay đổi vào DB
+                throw new Exception("Product not found!");
+            product.Sku = request.Sku;
+            product.Name = request.Name;
+            product.BasePrice = request.BasePrice;
+            product.IsActive = request.IsActive;
+            product.BranchId = request.BranchId;
+            product.CategoryId = request.CategoryId;
+            product.UpdatedAt = DateTime.UtcNow;
+            _context.Products.Update(product);
             await _context.SaveChangesAsync();
+            return new ProductResponse
+            {
+                ProductId = product.ProductId,
+                Sku = product.Sku,
+                Name = product.Name,
+                BasePrice = product.BasePrice,
+                IsActive = product.IsActive,
+                Branch = new BranchResponse
+                {
+                    BranchId = product.Branch.BranchId,
+                    Name = product.Branch.Name,
+                    Address = product.Branch.Address,
+                    PhoneNumber = product.Branch.PhoneNumber
+                },
+                Category = new CategoryResponse
+                {
+                    CategoryId = product.Category.CategoryId,
+                    Name = product.Category.Name,
+                    CreatedAt = product.Category.CreatedAt,
+                    UpdatedAt = product.Category.UpdatedAt
+                },
+                UpdatedAt = product.UpdatedAt
+            };
 
-            // 5. Trả về response
-            return _mapper.Map<ProductResponse?>(product);
         }
     }
 }

@@ -1,12 +1,9 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace LVTN_BE_COFFE.Infrastructures.Entities
+namespace LVTN_BE_COFFE.Domain.VModel
 {
-    public class Branch
+    public class BranchVModel
     {
-        [Key]
-        public int BranchId { get; set; }
-
         [Required]
         [MaxLength(200)]
         public string Name { get; set; } = string.Empty;//Tên chi chánh (vd: Chi Nhánh Hồ Chí Minh, Vũng Tàu...)
@@ -14,13 +11,14 @@ namespace LVTN_BE_COFFE.Infrastructures.Entities
         [MaxLength(500)]
         public string Address { get; set; } = string.Empty; // địa chỉ chi nhánh
 
-        public string PhoneNumber { get; set; } = string.Empty; // số điện thoại cho từng chi nhánh
+        public string PhoneNumber { get; set; } = string.Empty;
+        public int BranchId { get; internal set; }
+    }
 
+    public class BranchResponse : BranchVModel
+    {
+        public new int BranchId { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdateAt { get; set; }
-
-        // Navigation: 1 chi nhánh có nhiều sản phẩm
-        public ICollection<Product>? Products { get; set; }
-        public int ProductTypeId { get; internal set; }
     }
 }

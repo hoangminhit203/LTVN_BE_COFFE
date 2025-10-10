@@ -31,6 +31,11 @@ builder.Services.AddScoped<IEmailSenderService, SendEmailService>();
 builder.Services.AddSingleton<Globals>();
 builder.Services.AddHttpContextAccessor();
 
+// Product-related services
+builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<IBranchService, BranchService>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+
 // ---------------------------
 // 3️⃣ Add DbContext + Identity
 // ---------------------------
@@ -45,14 +50,15 @@ builder.Services.AddIdentity<AspNetUsers, AspNetRoles>()
 // 4️⃣ JWT Configuration
 // ---------------------------
 builder.Services.Configure<JwtSettings>(
-    builder.Configuration.GetSection("JwtSettings")); // cho TokenService
+    builder.Configuration.GetSection("JwtSettings"));
+
 var jwtSection = builder.Configuration.GetSection("Jwt");
 string? key = jwtSection["Key"];
 string? issuer = jwtSection["Issuer"];
 string? audience = jwtSection["Audience"];
 
 if (string.IsNullOrEmpty(key))
-    throw new Exception("JWT Key is missing in configuration (appsettings.Development.json).");
+    throw new Exception("JWT Key is missing in configuration (appsettings.json).");
 
 builder.Services.AddAuthentication(options =>
 {
@@ -76,7 +82,7 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 
 // ---------------------------
-// 5️⃣ Session (optional but useful)
+// 5️⃣ Session (optional)
 // ---------------------------
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
@@ -103,37 +109,4 @@ builder.Services.AddSwaggerGen(c =>
         Description = "Nhập 'Bearer' [space] + token.\n\nVí dụ: `Bearer abc123xyz`"
     });
 
-    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
-    {
-        {
-            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-            {
-                Reference = new Microsoft.OpenApi.Models.OpenApiReference
-                {
-                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            new string[] {}
-        }
-    });
-});
-
-// ---------------------------
-// 7️⃣ Build + Middleware
-// ---------------------------
-var app = builder.Build();
-
-// Use Swagger always (for Dev)
-app.UseSwagger();
-app.UseSwaggerUI();
-
-app.UseHttpsRedirection();
-
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.UseSession();
-app.MapControllers();
-
-app.Run();
+    c.AddSecurityRequirement(new Microso

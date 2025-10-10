@@ -1,36 +1,41 @@
-﻿using System;
+﻿using LVTN_BE_COFFE.Infrastructures.Entities;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
-namespace LVTN_BE_COFFE.Infrastructures.Entities
+public class Product
 {
-    public class Products
-    {
-        [Key]
-        public int ProductId { get; set; }
+    [Key]
+    public int ProductId { get; set; }
 
-        // Mỗi sản phẩm thuộc một loại (trà sữa, topping, đồ ăn kèm)
-        public int ProductTypeId { get; set; }
+    // 🔗 Khóa ngoại đến ProductType
+    [Required]
+    public int CategoryId { get; set; }
 
-        // Mỗi sản phẩm thuộc về một chi nhánh
-        public int BranchId { get; set; }
+    // 🔗 Khóa ngoại đến Branch
+    [Required]
+    public int BranchId { get; set; }
 
-        public string Sku { get; set; } = string.Empty; // Mã sản phẩm riêng (VD: TS001)
+    [Required]
+    [MaxLength(50)]
+    public string Sku { get; set; } = string.Empty; // Mã sản phẩm riêng (VD: TS001)
 
-        [Required]
-        [MaxLength(200)]
-        public string Name { get; set; } = string.Empty; // Tên sản phẩm
+    [Required]
+    [MaxLength(200)]
+    public string Name { get; set; } = string.Empty; // Tên sản phẩm
 
-        public decimal BasePrice { get; set; } // Giá cơ bản
+    [Range(0, double.MaxValue)]
+    public decimal BasePrice { get; set; } // Giá cơ bản
 
-        public bool IsActive { get; set; } = true; // Còn bán hay ngừng bán
+    public bool IsActive { get; set; } = true; // Còn bán hay ngừng bán
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public DateTime? UpdateAt { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; set; }
 
-        // Navigation
-        public ProductType ProductType { get; set; }
-        public Branch Branch { get; set; }
-    }
+    // Navigation Properties
+    public Category Category { get; set; } = null!;
+    public Branch Branch { get; set; } = null!;
 
+    // Liên kết sang các biến thể (size, topping...)
+    public ICollection<ProductVariant> Variants { get; set; } = new List<ProductVariant>();
 }
