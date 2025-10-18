@@ -1,4 +1,5 @@
-﻿using LVTN_BE_COFFE.Infrastructures.Entities;
+﻿using LVTN_BE_COFFE.Domain.Common;
+using LVTN_BE_COFFE.Infrastructures.Entities;
 
 namespace LVTN_BE_COFFE.Domain.VModel
 {
@@ -33,5 +34,16 @@ namespace LVTN_BE_COFFE.Domain.VModel
         public BranchResponse Branch { get; set; } = null!;
         public CategoryResponse Category { get; set; } = null!;
 
+    }
+    public class ProductFilterVModel
+    {
+        public string? Name { get; set; }
+        public DateTime? CreatedDate { get; set; }
+        public DateTime? UpdatedBy { get; set; }
+        public int? CategoryId { get; set; }
+        public int? BranchId { get; set; }
+        public bool? IsActive { get; set; }
+        public int PageNumber { get; set; } = Numbers.Pagination.DefaultPageNumber;
+        public int PageSize { get; set; } = Numbers.Pagination.DefaultPageSize;
     }
 }

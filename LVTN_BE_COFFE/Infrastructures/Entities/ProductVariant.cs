@@ -21,5 +21,7 @@
 
         // Liên kết N - N với topping thông qua bảng trung gian
         public ICollection<ProductVariantTopping> ProductVariantToppings { get; set; } = new List<ProductVariantTopping>();
+        // Nhiều ảnh riêng cho từng variant (VD: khác màu, kiểu dáng)
+        public ICollection<ProductImage> Images { get; set; } = new List<ProductImage>();
     }
 }

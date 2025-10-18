@@ -2,10 +2,11 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Linq;
+using System.Reflection.Emit;
 using System.Threading;
 using System.Threading.Tasks;
-using System;
 
 public class AppDbContext : IdentityDbContext<AspNetUsers, AspNetRoles, string>
 {
@@ -34,10 +35,24 @@ public class AppDbContext : IdentityDbContext<AspNetUsers, AspNetRoles, string>
     public DbSet<ProductVariantTopping> ProductVariantToppings { get; set; } = null!;
     public DbSet<Size> Sizes { get; set; } = null!;
 
+    public DbSet<ProductImage> Images { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
+        // ProductImage
+        builder.Entity<ProductImage>()
+        .HasOne(pi => pi.Product)
+        .WithMany(p => p.Images)
+        .HasForeignKey(pi => pi.ProductId)
+        .OnDelete(DeleteBehavior.Cascade);
 
+        // Cho phép null để không cần ProductVariant tồn tại
+        builder.Entity<ProductImage>()
+            .HasOne(pi => pi.ProductVariant)
+            .WithMany(pv => pv.Images)
+            .HasForeignKey(pi => pi.ProductVariantId)
+            .OnDelete(DeleteBehavior.NoAction);
         // Category 1 - N Product
         builder.Entity<Category>()
             .HasMany(c => c.Products)
@@ -66,7 +81,7 @@ public class AppDbContext : IdentityDbContext<AspNetUsers, AspNetRoles, string>
             .HasForeignKey(v => v.SizeId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Many-to-Many ProductVariant ↔ Topping
+        // Many-to-Many ProductVariant - Topping
         builder.Entity<ProductVariantTopping>()
             .HasKey(pvt => new { pvt.ProductVariantId, pvt.ToppingId });
 
@@ -80,7 +95,7 @@ public class AppDbContext : IdentityDbContext<AspNetUsers, AspNetRoles, string>
             .WithMany(t => t.ProductVariantToppings)
             .HasForeignKey(pvt => pvt.ToppingId);
 
-        // RefreshToken ↔ User
+        // RefreshToken - User
         builder.Entity<RefreshToken>()
             .HasOne(rt => rt.User)
             .WithMany(u => u.RefreshTokens)

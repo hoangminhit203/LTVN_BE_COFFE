@@ -1,6 +1,8 @@
 ﻿using LVTN_BE_COFFE.Domain.Common;
 using LVTN_BE_COFFE.Domain.IServices;
+using LVTN_BE_COFFE.Domain.Services;
 using LVTN_BE_COFFE.Infrastructures.Entities;
+using LVTN_BE_COFFE.Services;
 using LVTN_BE_COFFE.Services.Helpers;
 using LVTN_BE_COFFE.Services.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -22,6 +24,10 @@ builder.Services.AddTransient<IAspNetUsersService, AspNetUsersService>();
 builder.Services.AddTransient<IAspNetRolesService, AspNetRolesService>();
 builder.Services.AddTransient<IAuthService, AuthService>();
 builder.Services.AddTransient<ISysApiService, SysApiService>();
+//Các gói Cloundinary Service  
+builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
+builder.Services.AddScoped<CloudinaryService>();
+
 
 // Add DbContext
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -36,6 +42,20 @@ builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 //builder.Services.AddSingleton<DeviceDetectionService>();
 builder.Services.AddSingleton<Globals>();
 builder.Services.AddScoped<IEmailSenderService, SendEmailService>();
+//image
+builder.Services.AddScoped<IProductImageService, ProductImageService>();
+//category
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+//branch
+builder.Services.AddScoped<IBranchService, BranchService>();
+//Product
+builder.Services.AddScoped<IProductService, ProductService>();
+//Size
+builder.Services.AddScoped<ISizeService, SizeService>();
+//Topping
+builder.Services.AddScoped<IToppingService, ToppingService>();
+//ProductVariant
+builder.Services.AddScoped<IProductVariantService, ProductVariantService>();
 
 // JWT Config
 var jwtSettings = builder.Configuration.GetSection("Jwt");

@@ -38,4 +38,7 @@ public class Product
 
     // Liên kết sang các biến thể (size, topping...)
     public ICollection<ProductVariant> Variants { get; set; } = new List<ProductVariant>();
+
+    // Danh sách ảnh của sản phẩm
+    public ICollection<ProductImage> Images { get; set; } = new List<ProductImage>();
 }

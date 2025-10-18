@@ -1,4 +1,6 @@
-﻿using LVTN_BE_COFFE.Domain.IServices;
+﻿using LVTN_BE_COFFE.Domain.Common;
+using LVTN_BE_COFFE.Domain.IServices;
+using LVTN_BE_COFFE.Domain.Model;
 using LVTN_BE_COFFE.Domain.VModel;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -15,19 +17,20 @@ namespace LVTN_BE_COFFE.Controllers
         {
             _productService = productService;
         }
-
-        // GET: api/Product
+        
+        // GET: api/ProductFilter
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+
+        public async Task<ActionResult<PaginationModel<ProductResponse>>> getAll([FromQuery] ProductFilterVModel filterVModel)
         {
             try
             {
-                var products = await _productService.GetAllProducts();
-                return Ok(products);
+                var product = await _productService.GetAllProducts(filterVModel);
+                return Ok(product);
             }
-            catch (Exception ex)
+            catch (Exception e)
             {
-                return StatusCode(500, new { message = "Lỗi khi lấy danh sách sản phẩm.", detail = ex.Message });
+                return StatusCode(500, new { message = "Lỗi khi lấy danh sách sản phẩm fillter.", detail = e.Message });
             }
         }
 
