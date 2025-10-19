@@ -1,8 +1,11 @@
 ﻿
 using LVTN_BE_COFFE.Domain.IServices;
+using LVTN_BE_COFFE.Domain.Model;
 using LVTN_BE_COFFE.Domain.VModel;
 using LVTN_BE_COFFE.Infrastructures.Entities;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace LVTN_BE_COFFE.Services.Services
 {
@@ -51,7 +54,6 @@ namespace LVTN_BE_COFFE.Services.Services
                 Name = newProduct.Name,
                 BasePrice = newProduct.BasePrice,
                 IsActive = newProduct.IsActive,
-                BranchId = newProduct.BranchId,
                 CreatedAt = newProduct.CreatedAt,
                 Branch = new BranchResponse
                 {
@@ -94,45 +96,49 @@ namespace LVTN_BE_COFFE.Services.Services
                 BasePrice = product.BasePrice,
                 IsActive = product.IsActive,
                 BranchId = product.BranchId,
+                CategoryId = product.CategoryId,
                 CreatedAt = product.CreatedAt,
                 UpdatedAt = product.UpdatedAt
             };
 
         }
 
-        public Task<List<ProductResponse>> GetAllProducts()
-        {
-            return _context.Products.
-                Select(p => new ProductResponse{
-                ProductId = p.ProductId,
-                Sku = p.Sku,
-                Name = p.Name,
-                BasePrice = p.BasePrice,
-                IsActive = p.IsActive,
-                BranchId = p.BranchId,
-                CreatedAt = p.CreatedAt,
-                UpdatedAt = p.UpdatedAt,
-                Branch = new BranchResponse
-                {
-                    BranchId = p.Branch.BranchId,
-                    Name = p.Branch.Name,
-                    Address = p.Branch.Address,
-                    PhoneNumber = p.Branch.PhoneNumber
-                },
-                Category = new CategoryResponse
-                {
-                    CategoryId = p.Category.CategoryId,
-                    Name = p.Category.Name,
-                    CreatedAt = p.Category.CreatedAt,
-                    UpdatedAt = p.Category.UpdatedAt
-                }
-           })
-        .ToListAsync();
-        }
+        //public Task<List<ProductResponse>> GetAllProducts()
+        //{
+        //    return _context.Products.
+        //        Select(p => new ProductResponse{
+        //        ProductId = p.ProductId,
+        //        Sku = p.Sku,
+        //        Name = p.Name,
+        //        BasePrice = p.BasePrice,
+        //        IsActive = p.IsActive,
+        //        CreatedAt = p.CreatedAt,
+        //        UpdatedAt = p.UpdatedAt,
+        //        Branch = new BranchResponse
+        //        {
+        //            BranchId = p.Branch.BranchId,
+        //            Name = p.Branch.Name,
+        //            Address = p.Branch.Address,
+        //            PhoneNumber = p.Branch.PhoneNumber
+        //        },
+        //        Category = new CategoryResponse
+        //        {
+        //            CategoryId = p.Category.CategoryId,
+        //            Name = p.Category.Name,
+        //            CreatedAt = p.Category.CreatedAt,
+        //            UpdatedAt = p.Category.UpdatedAt
+        //        }
+        //   })
+        //.ToListAsync();
+        //}
 
         public async Task<ProductResponse?> GetProduct(int productId)
         {
-            var product = await _context.Products.FindAsync(productId);
+            var product = await _context.Products
+                    .Include(p => p.Branch)
+                   .Include(p => p.Category)
+                   .FirstOrDefaultAsync(p => p.ProductId == productId);
+
             if (product == null)
                 throw new Exception("Product not found!");
 
@@ -143,7 +149,6 @@ namespace LVTN_BE_COFFE.Services.Services
                 Name = product.Name,
                 BasePrice = product.BasePrice,
                 IsActive = product.IsActive,
-                BranchId = product.BranchId,
                 CreatedAt = product.CreatedAt,
                 UpdatedAt = product.UpdatedAt,
                 Branch = new BranchResponse
@@ -160,6 +165,62 @@ namespace LVTN_BE_COFFE.Services.Services
                     CreatedAt = product.Category.CreatedAt,
                     UpdatedAt = product.Category.UpdatedAt
                 }
+            };
+        }
+
+        public async Task<ActionResult<PaginationModel<ProductResponse>>> GetAllProducts(ProductFilterVModel filter)
+        {
+            var query = _context.Products.AsQueryable();
+            if (!string.IsNullOrEmpty(filter.Name))
+            {
+                query = query.Where(p => p.Name.Contains(filter.Name));
+            }
+            if (filter.CategoryId.HasValue)
+            {
+                query = query.Where(p => p.CategoryId == filter.CategoryId.Value);
+            }
+            if (filter.BranchId.HasValue)
+            {
+                query = query.Where(p => p.BranchId == filter.BranchId.Value);
+            }
+            if (filter.IsActive.HasValue)
+            {
+                query = query.Where(p => p.IsActive == filter.IsActive.Value);
+            }
+            var totalRecords = await query.CountAsync();
+            var records = await query
+                .OrderByDescending(p => p.ProductId)
+                .Skip((filter.PageNumber - 1) * filter.PageSize)
+                .Take(filter.PageSize)
+                .Select(p => new ProductResponse
+                {
+                    ProductId = p.ProductId,
+                    Sku = p.Sku,
+                    Name = p.Name,
+                    BasePrice = p.BasePrice,
+                    IsActive = p.IsActive,
+                    CreatedAt = p.CreatedAt,
+                    UpdatedAt = p.UpdatedAt,
+                    Branch = new BranchResponse
+                    {
+                        BranchId = p.Branch.BranchId,
+                        Name = p.Branch.Name,
+                        Address = p.Branch.Address,
+                        PhoneNumber = p.Branch.PhoneNumber
+                    },
+                    Category = new CategoryResponse
+                    {
+                        CategoryId = p.Category.CategoryId,
+                        Name = p.Category.Name,
+                        CreatedAt = p.Category.CreatedAt,
+                        UpdatedAt = p.Category.UpdatedAt
+                    }
+                })
+                .ToListAsync();
+            return new PaginationModel<ProductResponse>
+            {
+                Records = records,
+                TotalRecords = totalRecords
             };
         }
 

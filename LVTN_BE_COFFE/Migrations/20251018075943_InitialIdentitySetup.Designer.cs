@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LVTN_BE_COFFE.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251011090723_UpdateAppContext")]
-    partial class UpdateAppContext
+    [Migration("20251018075943_InitialIdentitySetup")]
+    partial class InitialIdentitySetup
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -540,6 +540,47 @@ namespace LVTN_BE_COFFE.Migrations
                     b.ToTable("Products");
                 });
 
+            modelBuilder.Entity("ProductImage", b =>
+                {
+                    b.Property<int>("ImageId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ImageId"));
+
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsMain")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ProductVariantId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PublicId")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("ImageId");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("ProductVariantId");
+
+                    b.ToTable("Images");
+                });
+
             modelBuilder.Entity("LVTN_BE_COFFE.Infrastructures.Entities.ProductVariant", b =>
                 {
                     b.HasOne("Product", "Product")
@@ -659,6 +700,23 @@ namespace LVTN_BE_COFFE.Migrations
                     b.Navigation("Category");
                 });
 
+            modelBuilder.Entity("ProductImage", b =>
+                {
+                    b.HasOne("Product", "Product")
+                        .WithMany("Images")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("LVTN_BE_COFFE.Infrastructures.Entities.ProductVariant", "ProductVariant")
+                        .WithMany("Images")
+                        .HasForeignKey("ProductVariantId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("Product");
+
+                    b.Navigation("ProductVariant");
+                });
+
             modelBuilder.Entity("LVTN_BE_COFFE.Infrastructures.Entities.AspNetUsers", b =>
                 {
                     b.Navigation("RefreshTokens");
@@ -676,6 +734,8 @@ namespace LVTN_BE_COFFE.Migrations
 
             modelBuilder.Entity("LVTN_BE_COFFE.Infrastructures.Entities.ProductVariant", b =>
                 {
+                    b.Navigation("Images");
+
                     b.Navigation("ProductVariantToppings");
                 });
 
@@ -691,6 +751,8 @@ namespace LVTN_BE_COFFE.Migrations
 
             modelBuilder.Entity("Product", b =>
                 {
+                    b.Navigation("Images");
+
                     b.Navigation("Variants");
                 });
 #pragma warning restore 612, 618
