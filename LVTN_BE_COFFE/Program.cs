@@ -51,11 +51,11 @@ builder.Services.AddScoped<IBranchService, BranchService>();
 //Product
 builder.Services.AddScoped<IProductService, ProductService>();
 //Size
-builder.Services.AddScoped<ISizeService, SizeService>();
+builder.Services.AddScoped<ISizeService, CartItemService>();
 //Topping
-builder.Services.AddScoped<IToppingService, ToppingService>();
+builder.Services.AddScoped<IToppingService, CheckoutService>();
 //ProductVariant
-builder.Services.AddScoped<IProductVariantService, ProductVariantService>();
+builder.Services.AddScoped<IProductVariantService, OrderService>();
 
 // JWT Config
 var jwtSettings = builder.Configuration.GetSection("Jwt");

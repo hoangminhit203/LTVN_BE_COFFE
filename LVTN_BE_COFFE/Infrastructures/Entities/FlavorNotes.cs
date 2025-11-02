@@ -1,8 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
-public class Category
+public class FlavorNote
 {
     [Key]
     public int Id { get; set; }
@@ -10,7 +9,6 @@ public class Category
     [Required, StringLength(100)]
     public string Name { get; set; }
 
-    public string? Description { get; set; }
-
-    public ICollection<ProductCategory> ProductCategories { get; set; }
+    // Navigation property
+    public ICollection<ProductFlavorNote> ProductFlavorNotes { get; set; }=new List<ProductFlavorNote>();
 }

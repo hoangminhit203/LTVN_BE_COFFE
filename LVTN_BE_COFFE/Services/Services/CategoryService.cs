@@ -1,11 +1,12 @@
 ﻿using LVTN_BE_COFFE.Domain.IServices;
+using LVTN_BE_COFFE.Domain.Model;
 using LVTN_BE_COFFE.Domain.VModel;
-using LVTN_BE_COFFE.Infrastructures.Entities;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace LVTN_BE_COFFE.Services.Services
+namespace LVTN_BE_COFFE.Domain.Services
 {
-    public class CategoryService : ICategoryService
+    public class CategoryService : ControllerBase, ICategoryService
     {
         private readonly AppDbContext _context;
 
@@ -14,104 +15,103 @@ namespace LVTN_BE_COFFE.Services.Services
             _context = context;
         }
 
-        public async Task<CategoryResponse?> CreateCategory(CategoryCreateVModel request)
+        // ✅ Create
+        public async Task<ActionResult<CategoryResponse>?> CreateCategory(CategoryCreateVModel request)
         {
-            var existing = await _context.Categories
-                .FirstOrDefaultAsync(c => c.Name == request.Name);
-
-            if (existing != null)
-                throw new Exception("Category already exists.");
-
             var category = new Category
             {
                 Name = request.Name,
-                CreatedAt = DateTime.UtcNow
+                Description = request.Description
             };
 
             _context.Categories.Add(category);
             await _context.SaveChangesAsync();
 
-            return new CategoryResponse
-            {
-                CategoryId = category.CategoryId,
-                Name = category.Name,
-                CreatedAt = category.CreatedAt
-            };
+            return MapToResponse(category);
         }
 
-        public async Task<CategoryResponse?> UpdateCategory(CategoryUpdateVModel request)
+        // ✅ Update
+        public async Task<ActionResult<CategoryResponse>?> UpdateCategory(CategoryUpdateVModel request, int id)
         {
-            var category = await _context.Categories.FindAsync(request.CategoryId);
+            var category = await _context.Categories.FindAsync(id);
             if (category == null)
-                throw new Exception("Category not found.");
+                return NotFound("Category not found");
 
             category.Name = request.Name;
-            category.UpdatedAt = DateTime.UtcNow;
+            category.Description = request.Description;
 
-            _context.Categories.Update(category);
             await _context.SaveChangesAsync();
 
-            return new CategoryResponse
-            {
-                CategoryId = category.CategoryId,
-                Name = category.Name,
-                CreatedAt = category.CreatedAt,
-                UpdatedAt = category.UpdatedAt
-            };
+            return MapToResponse(category);
         }
 
-        public async Task<bool> DeleteCategory(int categoryId)
+        // ✅ Delete
+        public async Task<ActionResult<bool>> DeleteCategory(int id)
         {
-            var category = await _context.Categories.FindAsync(categoryId);
+            var category = await _context.Categories.FindAsync(id);
             if (category == null)
-                throw new Exception("Category not found.");
+                return NotFound("Category not found");
 
             _context.Categories.Remove(category);
             await _context.SaveChangesAsync();
             return true;
         }
 
-        public async Task<List<CategoryResponse>> GetAllCategories()
+        // ✅ Get by ID
+        public async Task<ActionResult<CategoryResponse>?> GetCategory(int id)
         {
-            return await _context.Categories
-                .AsNoTracking()
-                .Select(c => new CategoryResponse
-                {
-                    CategoryId = c.CategoryId,
-                    Name = c.Name,
-                    CreatedAt = c.CreatedAt,
-                    UpdatedAt = c.UpdatedAt
-                })
+            var category = await _context.Categories
+                .Include(c => c.ProductCategories)
+                    .ThenInclude(pc => pc.Product)
+                .FirstOrDefaultAsync(c => c.Id == id);
+
+            if (category == null)
+                return NotFound("Category not found");
+
+            return MapToResponse(category);
+        }
+
+        // ✅ Get all with pagination + filter
+        public async Task<ActionResult<PaginationModel<CategoryResponse>>> GetAllCategories(CategoryFilterVModel filter)
+        {
+            var query = _context.Categories.AsQueryable();
+
+            if (!string.IsNullOrEmpty(filter.Name))
+                query = query.Where(x => x.Name.Contains(filter.Name));
+
+            var totalCount = await query.CountAsync();
+
+            var items = await query
+                .Skip((filter.PageNumber - 1) * filter.PageSize)
+                .Take(filter.PageSize)
+                .Include(c => c.ProductCategories)
+                    .ThenInclude(pc => pc.Product)
                 .ToListAsync();
-        }
 
-        public async Task<CategoryResponse?> GetCategoryById(int categoryId)
-        {
-            return await _context.Categories
-                .AsNoTracking()
-                .Where(c => c.CategoryId == categoryId)
-                .Select(c => new CategoryResponse
-                {
-                    CategoryId = c.CategoryId,
-                    Name = c.Name,
-                    CreatedAt = c.CreatedAt,
-                    UpdatedAt = c.UpdatedAt
-                })
-                .FirstOrDefaultAsync();
-        }
-
-        public async Task<CategoryResponse?> FindByName(string name)
-        {
-            var c = await _context.Categories
-                .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.Name == name);
-
-            return c == null ? null : new CategoryResponse
+           return new PaginationModel<CategoryResponse>
             {
-                CategoryId = c.CategoryId,
-                Name = c.Name,
-                CreatedAt = c.CreatedAt,
-                UpdatedAt = c.UpdatedAt
+                TotalRecords = totalCount,
+                Records = items.Select(MapToResponse).ToList()
+            };
+        }
+
+        // ✅ Map entity → response
+        private static CategoryResponse MapToResponse(Category x)
+        {
+            return new CategoryResponse
+            {
+                CategoryId = x.Id,
+                Name = x.Name,
+                Description = x.Description,
+                Products = x.ProductCategories?.Select(pc => new ProductResponse
+                {
+                    ProductId = pc.Product.Id,
+                    Name = pc.Product.Name,
+                    Description = pc.Product.Description,
+                    Price = pc.Product.Price,
+                    ImageUrl = pc.Product.ImageUrl,
+                    CategoryId = pc.CategoryId
+                }).ToList()
             };
         }
     }

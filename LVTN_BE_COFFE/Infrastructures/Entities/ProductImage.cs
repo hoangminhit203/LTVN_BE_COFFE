@@ -18,7 +18,7 @@ public class ProductImage
     public Product? Product { get; set; }
 
     public int? ProductVariantId { get; set; }
-    public ProductVariant? ProductVariant { get; set; }
+    public ProductAttributes? ProductVariant { get; set; }
 
     public bool IsMain { get; set; } = false;
     public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
