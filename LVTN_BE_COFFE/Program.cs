@@ -43,19 +43,11 @@ builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 builder.Services.AddSingleton<Globals>();
 builder.Services.AddScoped<IEmailSenderService, SendEmailService>();
 //image
-builder.Services.AddScoped<IProductImageService, ProductImageService>();
+//builder.Services.AddScoped<IProductImageService, ProductImageService>();
 //category
 builder.Services.AddScoped<ICategoryService, CategoryService>();
-//branch
-builder.Services.AddScoped<IBranchService, BranchService>();
 //Product
 builder.Services.AddScoped<IProductService, ProductService>();
-//Size
-builder.Services.AddScoped<ISizeService, CartItemService>();
-//Topping
-builder.Services.AddScoped<IToppingService, CheckoutService>();
-//ProductVariant
-builder.Services.AddScoped<IProductVariantService, OrderService>();
 
 // JWT Config
 var jwtSettings = builder.Configuration.GetSection("Jwt");

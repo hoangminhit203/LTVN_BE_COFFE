@@ -118,9 +118,9 @@ public class AppDbContext : IdentityDbContext<AspNetUsers, AspNetRoles, string>
             .WithMany(c => c.ProductCategories)
             .HasForeignKey(pc => pc.CategoryId);
         modelBuilder.Entity<Category>()
-            .HasOne(c => c.ParentCategory)
+            .HasOne(c => c.ProductCategories)
             .WithMany()
-            .HasForeignKey(c => c.ParentId)
+            .HasForeignKey(c => c.ProductCategories)
             .OnDelete(DeleteBehavior.Restrict);
 
         // Configure Carts
