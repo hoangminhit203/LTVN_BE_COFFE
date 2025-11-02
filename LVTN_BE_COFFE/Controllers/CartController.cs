@@ -6,11 +6,11 @@ namespace LVTN_BE_COFFE.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class SizeController : ControllerBase
+    public class CartController : ControllerBase
     {
         private readonly ISizeService _sizeService;
 
-        public SizeController(ISizeService sizeService)
+        public CartController(ISizeService sizeService)
         {
             _sizeService = sizeService;
         }

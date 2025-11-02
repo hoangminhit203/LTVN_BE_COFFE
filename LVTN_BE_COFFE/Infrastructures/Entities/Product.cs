@@ -1,44 +1,40 @@
-﻿using LVTN_BE_COFFE.Infrastructures.Entities;
-using System;
-using System.Collections.Generic;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 
+[Index(nameof(Name), IsUnique = false)] // FULLTEXT index for search
 public class Product
 {
     [Key]
-    public int ProductId { get; set; }
+    public int Id { get; set; }
 
-    // 🔗 Khóa ngoại đến ProductType
-    [Required]
-    public int CategoryId { get; set; }
+    [Required, StringLength(255)]
+    public string Name { get; set; }
 
-    // 🔗 Khóa ngoại đến Branch
-    [Required]
-    public int BranchId { get; set; }
+    public string? Description { get; set; }
 
     [Required]
-    [MaxLength(50)]
-    public string Sku { get; set; } = string.Empty; // Mã sản phẩm riêng (VD: TS001)
+    public decimal Price { get; set; }
 
     [Required]
-    [MaxLength(200)]
-    public string Name { get; set; } = string.Empty; // Tên sản phẩm
+    public int Stock { get; set; } = 0;
 
-    [Range(0, double.MaxValue)]
-    public decimal BasePrice { get; set; } // Giá cơ bản
+    [StringLength(255)]
+    public string? ImageUrl { get; set; }
 
-    public bool IsActive { get; set; } = true; // Còn bán hay ngừng bán
+    public bool IsFeatured { get; set; } = false;
+    public bool IsOnSale { get; set; } = false;
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    public DateTime? UpdatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-    // Navigation Properties
-    public Category Category { get; set; } = null!;
-    public Branch Branch { get; set; } = null!;
-
-    // Liên kết sang các biến thể (size, topping...)
-    public ICollection<ProductVariant> Variants { get; set; } = new List<ProductVariant>();
-
-    // Danh sách ảnh của sản phẩm
-    public ICollection<ProductImage> Images { get; set; } = new List<ProductImage>();
+    // Navigation properties
+    public ProductAttribute? ProductAttribute { get; set; }
+    public ICollection<ProductFlavorNote> ProductFlavorNotes { get; set; }
+    public ICollection<ProductBrewingMethod> ProductBrewingMethods { get; set; }
+    public ICollection<ProductCategory> ProductCategories { get; set; }
+    public ICollection<CartItem> CartItems { get; set; }
+    public ICollection<OrderItem> OrderItems { get; set; }
+    public ICollection<Review> Reviews { get; set; }
+    public ICollection<Wishlist> Wishlists { get; set; }
 }

@@ -1,11 +1,13 @@
 ﻿using LVTN_BE_COFFE.Domain.IServices;
+using LVTN_BE_COFFE.Domain.Model;
 using LVTN_BE_COFFE.Domain.VModel;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 
 namespace LVTN_BE_COFFE.API.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]")]
     public class CategoryController : ControllerBase
     {
         private readonly ICategoryService _categoryService;
@@ -17,83 +19,43 @@ namespace LVTN_BE_COFFE.API.Controllers
 
         // GET: api/category
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<ActionResult<PaginationModel<CategoryResponse>>> GetAll([FromQuery] CategoryFilterVModel filter)
         {
-            var categories = await _categoryService.GetAllCategories();
-            return Ok(categories);
+            return await _categoryService.GetAllCategories(filter);
         }
 
         // GET: api/category/{id}
-        [HttpGet("{id:int}")]
-        public async Task<IActionResult> GetById(int id)
+        [HttpGet("{id}")]
+        public async Task<ActionResult<CategoryResponse>?> GetById(int id)
         {
-            var category = await _categoryService.GetCategoryById(id);
-            if (category == null)
-                return NotFound(new { message = "Category not found" });
-
-            return Ok(category);
+            return await _categoryService.GetCategory(id);
         }
 
         // POST: api/category
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CategoryCreateVModel request)
+        public async Task<ActionResult<CategoryResponse>?> Create([FromBody] CategoryCreateVModel request)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            try
-            {
-                var created = await _categoryService.CreateCategory(request);
-                return CreatedAtAction(nameof(GetById), new { id = created!.CategoryId }, created);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
+            return await _categoryService.CreateCategory(request);
         }
 
         // PUT: api/category/{id}
-        [HttpPut("{id:int}")]
-        public async Task<IActionResult> Update(int id, [FromBody] CategoryCreateVModel request)
+        [HttpPut("{id}")]
+        public async Task<ActionResult<CategoryResponse>?> Update(int id, [FromBody] CategoryUpdateVModel request)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            try
-            {
-                var updated = await _categoryService.UpdateCategory(new CategoryUpdateVModel
-                {
-                    CategoryId = id,
-                    Name = request.Name
-                });
-
-                if (updated == null)
-                    return NotFound(new { message = "Category not found" });
-
-                return Ok(updated);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
+            return await _categoryService.UpdateCategory(request, id);
         }
 
         // DELETE: api/category/{id}
-        [HttpDelete("{id:int}")]
-        public async Task<IActionResult> Delete(int id)
+        [HttpDelete("{id}")]
+        public async Task<ActionResult<bool>> Delete(int id)
         {
-            try
-            {
-                var result = await _categoryService.DeleteCategory(id);
-                if (!result)
-                    return NotFound(new { message = "Category not found" });
-
-                return Ok(new { message = "Category deleted successfully" });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
+            return await _categoryService.DeleteCategory(id);
         }
     }
 }
