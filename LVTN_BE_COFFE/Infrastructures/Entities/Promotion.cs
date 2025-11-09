@@ -16,7 +16,7 @@ public class Promotion
 
     [Required]
     [StringLength(50)]
-    public string Code { get; set; }
+    public string Code { get; set; } = string.Empty;
 
     [StringLength(255)]
     public string? Description { get; set; }
@@ -37,7 +37,7 @@ public class Promotion
     [StringLength(500)]
     public string? ApplicableProducts { get; set; } // Comma-separated IDs or JSON string
 
-    // Navigation property
+    // 🔹 Navigation property
     public ICollection<Order> Orders { get; set; } = new List<Order>();
 
     [NotMapped]

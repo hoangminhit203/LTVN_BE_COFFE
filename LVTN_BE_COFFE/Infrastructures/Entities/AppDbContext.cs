@@ -34,7 +34,6 @@ public class AppDbContext : IdentityDbContext<AspNetUsers, AspNetRoles, string>
     public DbSet<BrewingMethod> BrewingMethods { get; set; }
     public DbSet<ProductBrewingMethod> ProductBrewingMethods { get; set; }
     public DbSet<Category> Categories { get; set; }
-    public DbSet<ProductCategory> ProductCategories { get; set; }
     public DbSet<Cart> Carts { get; set; }
     public DbSet<CartItem> CartItems { get; set; }
     public DbSet<Order> Orders { get; set; }
@@ -106,23 +105,6 @@ public class AppDbContext : IdentityDbContext<AspNetUsers, AspNetRoles, string>
             .WithMany(bm => bm.ProductBrewingMethods)
             .HasForeignKey(pbm => pbm.BrewingMethodId);
 
-        // Configure Categories and ProductCategories (many-to-many)
-        modelBuilder.Entity<ProductCategory>()
-            .HasKey(pc => new { pc.ProductId, pc.CategoryId });
-        modelBuilder.Entity<ProductCategory>()
-            .HasOne(pc => pc.Product)
-            .WithMany(p => p.ProductCategories)
-            .HasForeignKey(pc => pc.ProductId);
-        modelBuilder.Entity<ProductCategory>()
-            .HasOne(pc => pc.Category)
-            .WithMany(c => c.ProductCategories)
-            .HasForeignKey(pc => pc.CategoryId);
-        modelBuilder.Entity<Category>()
-            .HasOne(c => c.ParentCategory)
-            .WithMany()
-            .HasForeignKey(c => c.ParentId)
-            .OnDelete(DeleteBehavior.Restrict);
-
         // Configure Carts
         modelBuilder.Entity<Cart>()
             .HasOne(c => c.User)
@@ -146,10 +128,12 @@ public class AppDbContext : IdentityDbContext<AspNetUsers, AspNetRoles, string>
             .WithMany()
             .HasForeignKey(o => o.UserId)
             .OnDelete(DeleteBehavior.SetNull);
+
         modelBuilder.Entity<Order>()
             .HasOne(o => o.Promotion)
             .WithMany(p => p.Orders)
-            .HasForeignKey(o => o.VoucherCode);
+            .HasForeignKey(o => o.PromotionId) // 🔹 DÙNG PromotionId, KHÔNG dùng VoucherCode
+            .OnDelete(DeleteBehavior.SetNull);
 
         // Configure OrderItems
         modelBuilder.Entity<OrderItem>()

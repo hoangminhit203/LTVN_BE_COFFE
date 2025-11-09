@@ -10,33 +10,36 @@ public class Order
     [Key]
     public int Id { get; set; }
 
-    public int? UserId { get; set; }
+    public string? UserId { get; set; }
 
     [Required]
     public decimal TotalAmount { get; set; }
 
     [Required]
     [StringLength(255)]
-    public string ShippingAddress { get; set; }
+    public string ShippingAddress { get; set; } = string.Empty;
 
     [StringLength(50)]
     public string? ShippingMethod { get; set; }
 
     [Required]
     [StringLength(20)]
-    public string Status { get; set; } = "pending"; // pending, processing, shipped, delivered, cancelled
+    public string Status { get; set; } = "pending";
+
+    // 🔹 Dùng PromotionId làm khóa ngoại (chuẩn EF)
+    public int? PromotionId { get; set; }
 
     [StringLength(50)]
-    public string? VoucherCode { get; set; }
+    public string? VoucherCode { get; set; } // chỉ lưu mã code nếu cần
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-    // Navigation properties
+    // 🔹 Navigation
     [ForeignKey(nameof(UserId))]
     public AspNetUsers? User { get; set; }
 
-    [ForeignKey(nameof(VoucherCode))]
+    [ForeignKey(nameof(PromotionId))]
     public Promotion? Promotion { get; set; }
 
     public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
@@ -52,41 +55,24 @@ public class Order
         {
             var discount = GetDiscountAmount();
             var final = TotalAmount - discount;
-            return final < 0 ? 0 : final; // không để âm
+            return final < 0 ? 0 : final;
         }
     }
 
     private decimal GetDiscountAmount()
     {
         if (Promotion == null) return 0m;
-
-        // optional: kiểm tra thời hạn và min order
         if (!Promotion.IsActive) return 0m;
-        if (Promotion.MinOrderValue.HasValue && TotalAmount < Promotion.MinOrderValue.Value) return 0m;
+        if (Promotion.MinOrderValue.HasValue && TotalAmount < Promotion.MinOrderValue.Value)
+            return 0m;
 
-        decimal discount = 0m;
-
-        switch (Promotion.DiscountType)
+        decimal discount = Promotion.DiscountType switch
         {
-            case PromotionType.Percentage:
-                // DiscountValue là percent, ví dụ 10 => 10%
-                discount = (Promotion.DiscountValue / 100m) * TotalAmount;
-                break;
+            PromotionType.Percentage => (Promotion.DiscountValue / 100m) * TotalAmount,
+            PromotionType.Fixed => Promotion.DiscountValue,
+            _ => 0m
+        };
 
-            case PromotionType.Fixed:
-                // DiscountValue là số tiền cố định
-                discount = Promotion.DiscountValue;
-                break;
-
-            default:
-                discount = 0m;
-                break;
-        }
-
-        // Không được lớn hơn tổng tiền
-        if (discount > TotalAmount) discount = TotalAmount;
-
-        return discount;
+        return Math.Min(discount, TotalAmount);
     }
-
 }

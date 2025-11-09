@@ -30,11 +30,11 @@ public class Product
 
     // Navigation properties
     public ProductAttribute? ProductAttribute { get; set; }
-    public ICollection<ProductFlavorNote> ProductFlavorNotes { get; set; }
-    public ICollection<ProductBrewingMethod> ProductBrewingMethods { get; set; }
-    public ICollection<ProductCategory> ProductCategories { get; set; }
-    public ICollection<CartItem> CartItems { get; set; }
-    public ICollection<OrderItem> OrderItems { get; set; }
-    public ICollection<Review> Reviews { get; set; }
-    public ICollection<Wishlist> Wishlists { get; set; }
+    public ICollection<Category> Categories { get; set; } = new List<Category>();
+    public ICollection<ProductFlavorNote> ProductFlavorNotes { get; set; } = new List<ProductFlavorNote>();
+    public ICollection<ProductBrewingMethod> ProductBrewingMethods { get; set; } = new List<ProductBrewingMethod>();
+    public ICollection<CartItem> CartItems { get; set; } = new List<CartItem>();
+    public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
+    public ICollection<Review> Reviews { get; set; } = new List<Review>();
+    public ICollection<Wishlist> Wishlists { get; set; } = new List<Wishlist>();
 }

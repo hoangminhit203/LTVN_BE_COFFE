@@ -12,7 +12,7 @@ public class CheckoutService
         _context = context;
     }
 
-    public async Task<Order> CheckoutAsync(int userId, string shippingAddress, string? voucherCode = null)
+    public async Task<Order> CheckoutAsync(string userId, string shippingAddress, string? voucherCode = null)
     {
         var cart = await _context.Carts
             .Include(c => c.CartItems)

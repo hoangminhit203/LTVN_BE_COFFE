@@ -7,7 +7,7 @@ namespace LVTN_BE_COFFE.Domain.VModel
     public class OrderCreateVModel
     {
         [Required]
-        public int UserId { get; set; }
+        public string UserId { get; set; }
 
         [Required]
         [StringLength(255)]
@@ -40,7 +40,7 @@ namespace LVTN_BE_COFFE.Domain.VModel
     public class OrderResponse
     {
         public int Id { get; set; }
-        public int? UserId { get; set; }
+        public string? UserId { get; set; }
         public string ShippingAddress { get; set; }
         public string? ShippingMethod { get; set; }
         public string Status { get; set; }
@@ -54,7 +54,7 @@ namespace LVTN_BE_COFFE.Domain.VModel
 
     public class OrderFilterVModel
     {
-        public int? UserId { get; set; }
+        public string? UserId { get; set; }
         public string? Status { get; set; }
         public DateTime? FromDate { get; set; }
         public DateTime? ToDate { get; set; }

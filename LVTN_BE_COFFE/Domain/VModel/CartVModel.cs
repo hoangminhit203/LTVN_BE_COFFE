@@ -7,7 +7,7 @@ namespace LVTN_BE_COFFE.Domain.VModel
     public class CartResponse
     {
         public int CartId { get; set; }
-        public int? UserId { get; set; }
+        public string? UserId { get; set; }
         public string? UserName { get; set; }
         public string Status { get; set; }
         public decimal TotalPrice { get; set; }

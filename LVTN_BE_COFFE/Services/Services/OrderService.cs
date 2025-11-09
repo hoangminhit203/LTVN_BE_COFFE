@@ -118,7 +118,7 @@ namespace LVTN_BE_COFFE.Domain.Services
                 .Include(o => o.OrderItems)
                 .AsQueryable();
 
-            if (filter.UserId.HasValue)
+            if(filter.UserId is not null)
                 query = query.Where(o => o.UserId == filter.UserId);
 
             if (!string.IsNullOrEmpty(filter.Status))

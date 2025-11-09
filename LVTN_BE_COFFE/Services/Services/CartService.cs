@@ -14,7 +14,7 @@ namespace LVTN_BE_COFFE.Domain.Services
             _context = context;
         }
 
-        public async Task<CartResponse?> GetCartByUserAsync(int userId)
+        public async Task<CartResponse?> GetCartByUserAsync(string userId)
         {
             var cart = await _context.Carts
                 .Include(c => c.CartItems)
@@ -25,7 +25,7 @@ namespace LVTN_BE_COFFE.Domain.Services
             return cart == null ? null : MapToResponse(cart);
         }
 
-        public async Task<CartResponse> CreateCartAsync(int userId)
+        public async Task<CartResponse> CreateCartAsync(string userId)
         {
             var existing = await _context.Carts
                 .FirstOrDefaultAsync(c => c.UserId == userId && c.Status == "Active");

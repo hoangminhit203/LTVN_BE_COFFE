@@ -12,7 +12,7 @@ public class Review
     public int ProductId { get; set; }
 
     [Required]
-    public int UserId { get; set; }
+    public string? UserId { get; set; }
 
     [Required]
     public int Rating { get; set; }

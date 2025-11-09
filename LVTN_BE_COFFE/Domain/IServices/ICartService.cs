@@ -2,7 +2,7 @@
 
 public interface ICartService
 {
-    Task<CartResponse?> GetCartByUserAsync(int userId);
-    Task<CartResponse> CreateCartAsync(int userId);
+    Task<CartResponse?> GetCartByUserAsync(string userId);
+    Task<CartResponse> CreateCartAsync(string userId);
     Task<bool> ClearCartAsync(int cartId);
 }
