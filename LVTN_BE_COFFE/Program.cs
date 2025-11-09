@@ -42,12 +42,19 @@ builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 //builder.Services.AddSingleton<DeviceDetectionService>();
 builder.Services.AddSingleton<Globals>();
 builder.Services.AddScoped<IEmailSenderService, SendEmailService>();
+<<<<<<< HEAD
+=======
 //image
 //builder.Services.AddScoped<IProductImageService, ProductImageService>();
+>>>>>>> main
 //category
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 //Product
 builder.Services.AddScoped<IProductService, ProductService>();
+<<<<<<< HEAD
+//S
+=======
+>>>>>>> main
 
 // JWT Config
 var jwtSettings = builder.Configuration.GetSection("Jwt");

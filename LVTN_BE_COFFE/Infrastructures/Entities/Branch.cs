@@ -20,7 +20,7 @@ namespace LVTN_BE_COFFE.Infrastructures.Entities
         public DateTime? UpdateAt { get; set; }
 
         // Navigation: 1 chi nhánh có nhiều sản phẩm
-        public ICollection<Product>? Products { get; set; }
+        public ICollection<Product>? Products { get; set; } = new List<Product>();
         public int ProductTypeId { get; internal set; }
     }
 }

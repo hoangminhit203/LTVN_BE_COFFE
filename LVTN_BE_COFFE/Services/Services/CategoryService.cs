@@ -61,8 +61,7 @@ namespace LVTN_BE_COFFE.Domain.Services
         public async Task<ActionResult<CategoryResponse>?> GetCategory(int id)
         {
             var category = await _context.Categories
-                .Include(c => c.ProductCategories)
-                    .ThenInclude(pc => pc.Product)
+                .Include(c => c.Products) // thay ProductCategories -> Products
                 .FirstOrDefaultAsync(c => c.Id == id);
 
             if (category == null)
@@ -70,6 +69,7 @@ namespace LVTN_BE_COFFE.Domain.Services
 
             return MapToResponse(category);
         }
+
 
         // ✅ Get all with pagination + filter
         public async Task<ActionResult<PaginationModel<CategoryResponse>>> GetAllCategories(CategoryFilterVModel filter)
@@ -82,18 +82,18 @@ namespace LVTN_BE_COFFE.Domain.Services
             var totalCount = await query.CountAsync();
 
             var items = await query
+                .Include(c => c.Products) // thay ProductCategories -> Products
                 .Skip((filter.PageNumber - 1) * filter.PageSize)
                 .Take(filter.PageSize)
-                .Include(c => c.ProductCategories)
-                    .ThenInclude(pc => pc.Product)
                 .ToListAsync();
 
-           return new PaginationModel<CategoryResponse>
+            return new PaginationModel<CategoryResponse>
             {
                 TotalRecords = totalCount,
                 Records = items.Select(MapToResponse).ToList()
             };
         }
+
 
         // ✅ Map entity → response
         private static CategoryResponse MapToResponse(Category x)
@@ -103,16 +103,17 @@ namespace LVTN_BE_COFFE.Domain.Services
                 CategoryId = x.Id,
                 Name = x.Name,
                 Description = x.Description,
-                Products = x.ProductCategories?.Select(pc => new ProductResponse
+                Products = x.Products?.Select(p => new ProductResponse
                 {
-                    ProductId = pc.Product.Id,
-                    Name = pc.Product.Name,
-                    Description = pc.Product.Description,
-                    Price = pc.Product.Price,
-                    ImageUrl = pc.Product.ImageUrl,
-                    CategoryId = pc.CategoryId
+                    ProductId = p.Id,
+                    Name = p.Name,
+                    Description = p.Description,
+                    Price = p.Price,
+                    ImageUrl = p.ImageUrl,
+                    CategoryId = x.Id // gán CategoryId trực tiếp từ Category
                 }).ToList()
             };
         }
+
     }
 }

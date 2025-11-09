@@ -12,5 +12,5 @@ public class BrewingMethod
     public string? Description { get; set; }
 
     // Navigation property
-    public ICollection<ProductBrewingMethod> ProductBrewingMethods { get; set; }
+    public ICollection<ProductBrewingMethod> ProductBrewingMethods { get; set; } = new List<ProductBrewingMethod>();
 }
