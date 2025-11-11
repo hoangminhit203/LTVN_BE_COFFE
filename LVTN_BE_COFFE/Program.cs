@@ -45,6 +45,14 @@ builder.Services.AddScoped<IEmailSenderService, SendEmailService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 //Product
 builder.Services.AddScoped<IProductService, ProductService>();
+// Add Session
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
 
 // JWT Config
 var jwtSettings = builder.Configuration.GetSection("Jwt");
@@ -107,7 +115,7 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseHttpsRedirection();
-
+app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
 
