@@ -129,7 +129,7 @@ namespace LVTN_BE_COFFE.Services.Services
 
                 var sendMailResult = await _emailSender.SendMailAsync(
                     fromEmail: "tranhoangngoc112@gmail.com", // ✅ Thay bằng email thực của bạn
-                    fromPassWord: "ngoc123456", // ✅ Thay bằng App Password thực
+                    fromPassWord: "mffilftdavfmvvyg", // ✅ Thay bằng App Password thực
                     toEmail: newUser.Email,
                     sendMailTitle: subject,
                     sendMailBody: body
