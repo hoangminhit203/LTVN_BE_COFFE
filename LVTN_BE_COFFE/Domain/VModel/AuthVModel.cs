@@ -15,10 +15,10 @@ namespace LVTN_BE_COFFE.Domain.VModels
     }
     public class LoginResponse
     {
-        public string? Token { get; set; }
-        public string? Message { get; set; }
-        public bool? IsSuccess { get; set; }
-        public MeVModel? User { get; set; }
+        public string Token { get; set; }
+        public string Message { get; set; }
+        public bool IsSuccess { get; set; }
+        public MeVModel User { get; set; }
     }
     public class RegisterVModel : LoginVModel
     {

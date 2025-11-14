@@ -12,12 +12,11 @@ namespace LVTN_BE_COFFE.Services.Helpers
         public static string GenerateTokenJWT(IConfiguration configuration, string userId, string? email, string? userName)
         {
             var claims = new[]
-              {
-                    new Claim("sub",configuration["Jwt:Subject"]??"JWT Login"),
-                    new Claim("jti", Guid.NewGuid().ToString()),
-                    new Claim("UserId",userId),
-                    new Claim("Email",email??""),
-                    new Claim("UserName",userName??""),
+              { new Claim(JwtRegisteredClaimNames.Sub, configuration["Jwt:Subject"] ?? "JWT Login"),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                 new Claim(ClaimTypes.NameIdentifier, userId),      // ✅ đổi từ "UserId" sang ClaimTypes.NameIdentifier
+                new Claim(ClaimTypes.Email, email ?? ""),
+                new Claim(ClaimTypes.Name, userName ?? "")
                 };
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"] ?? "4335d179-a729-489c-82ec-b5ccd05a10f5"));
             var signIn = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

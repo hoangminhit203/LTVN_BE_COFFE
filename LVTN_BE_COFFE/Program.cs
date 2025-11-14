@@ -1,6 +1,7 @@
 ﻿using LVTN_BE_COFFE.Domain.Common;
 using LVTN_BE_COFFE.Domain.IServices;
 using LVTN_BE_COFFE.Domain.Services;
+using LVTN_BE_COFFE.Domain.Ultilities;
 using LVTN_BE_COFFE.Infrastructures.Entities;
 using LVTN_BE_COFFE.Services;
 using LVTN_BE_COFFE.Services.Helpers;
@@ -27,7 +28,8 @@ builder.Services.AddTransient<ISysApiService, SysApiService>();
 //Các gói Cloundinary Service  
 builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
 builder.Services.AddScoped<CloudinaryService>();
-
+// Add this line ⬇️
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
 
 // Add DbContext
 builder.Services.AddDbContext<AppDbContext>(options =>
