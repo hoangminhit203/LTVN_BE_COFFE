@@ -26,6 +26,9 @@ namespace LVTN_BE_COFFE.Infrastructures.Entities
 
         public bool? IsActive { get; set; }
 
+        // Navigation property cho ShippingAddresses
+        public ICollection<ShippingAddress> ShippingAddresses { get; set; } = new List<ShippingAddress>();
+
         // Navigation property cho RefreshTokens
         public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
     }

@@ -45,6 +45,7 @@ public class AppDbContext : IdentityDbContext<AspNetUsers, AspNetRoles, string>
     public DbSet<Blog> Blogs { get; set; }
     public DbSet<Contact> Contacts { get; set; }
     public DbSet<RefreshToken> RefreshToken { get; set; }
+    public DbSet<ShippingAddress> ShippingAddresses { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -116,18 +117,20 @@ public class AppDbContext : IdentityDbContext<AspNetUsers, AspNetRoles, string>
         modelBuilder.Entity<CartItem>()
             .HasOne(ci => ci.Cart)
             .WithMany(c => c.CartItems)
-            .HasForeignKey(ci => ci.CartId);
+            .HasForeignKey(ci => ci.CartId)
+            .OnDelete(DeleteBehavior.NoAction);
         modelBuilder.Entity<CartItem>()
             .HasOne(ci => ci.Product)
             .WithMany(p => p.CartItems)
-            .HasForeignKey(ci => ci.ProductId);
+            .HasForeignKey(ci => ci.ProductId)
+            .OnDelete(DeleteBehavior.NoAction); // 💡 Bổ sung
 
         // Configure Orders
         modelBuilder.Entity<Order>()
             .HasOne(o => o.User)
             .WithMany()
             .HasForeignKey(o => o.UserId)
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.NoAction);
 
         modelBuilder.Entity<Order>()
             .HasOne(o => o.Promotion)

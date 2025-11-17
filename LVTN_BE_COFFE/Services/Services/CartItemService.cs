@@ -45,7 +45,7 @@ namespace LVTN_BE_COFFE.Domain.Services
             // 3) Load the cart with items
             var cart = await _context.Carts
                 .Include(c => c.CartItems)
-                .FirstOrDefaultAsync(c => c.Id == cartId && c.UserId == userId);
+                .FirstOrDefaultAsync(c => c.cartId == cartId && c.UserId == userId);
 
             if (cart == null)
                 throw new InvalidOperationException("Cart not found or not owned by user.");
@@ -66,7 +66,8 @@ namespace LVTN_BE_COFFE.Domain.Services
                 {
                     var newItem = new CartItem
                     {
-                        CartId = cart.Id,
+                        CartId = cart.cartId,
+                        UserId = userId,
                         ProductId = request.ProductId,
                         Quantity = request.Quantity,
                         AddedAt = DateTime.UtcNow
@@ -77,6 +78,7 @@ namespace LVTN_BE_COFFE.Domain.Services
 
                 // 5) Update cart timestamp
                 cart.UpdatedAt = DateTime.UtcNow;
+
                 _context.Carts.Update(cart);
 
                 await _context.SaveChangesAsync();
@@ -85,7 +87,7 @@ namespace LVTN_BE_COFFE.Domain.Services
                 // 6) Load fresh item to return
                 var item = await _context.CartItems
                     .Include(ci => ci.Product)
-                    .FirstOrDefaultAsync(ci => ci.CartId == cart.Id && ci.ProductId == request.ProductId);
+                    .FirstOrDefaultAsync(ci => ci.CartId == cart.cartId && ci.ProductId == request.ProductId);
 
                 if (item == null)
                     throw new InvalidOperationException("Failed to retrieve updated cart item.");

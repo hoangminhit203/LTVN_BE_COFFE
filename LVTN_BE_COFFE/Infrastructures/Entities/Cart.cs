@@ -8,7 +8,7 @@ using System.Linq;
 public class Cart
 {
     [Key]
-    public int Id { get; set; }
+    public int cartId { get; set; }
 
     public string UserId { get; set; } = null!;
 

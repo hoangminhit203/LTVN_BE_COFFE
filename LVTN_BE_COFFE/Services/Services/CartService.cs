@@ -59,7 +59,7 @@ namespace LVTN_BE_COFFE.Domain.Services
         {
             var cart = await _context.Carts
                 .Include(c => c.CartItems)
-                .FirstOrDefaultAsync(c => c.Id == cartId && c.UserId == userId);
+                .FirstOrDefaultAsync(c => c.cartId == cartId && c.UserId == userId);
 
             if (cart == null) return false;
 
@@ -75,7 +75,7 @@ namespace LVTN_BE_COFFE.Domain.Services
                 .Include(c => c.CartItems)
                 .ThenInclude(ci => ci.Product)
                 .Include(c => c.User)
-                .FirstOrDefaultAsync(c => c.Id == cartId);
+                .FirstOrDefaultAsync(c => c.cartId == cartId);
 
             if (cart == null) throw new InvalidOperationException("Cart not found");
 
@@ -86,7 +86,7 @@ namespace LVTN_BE_COFFE.Domain.Services
         {
             var response = new CartResponse
             {
-                CartId = cart.Id,
+                CartId = cart.cartId,
                 UserId = cart.UserId,
                 UserName = cart.User?.UserName,
                 Status = cart.Status,

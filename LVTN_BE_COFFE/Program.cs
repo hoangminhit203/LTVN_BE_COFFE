@@ -45,6 +45,10 @@ builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 builder.Services.AddSingleton<Globals>();
 builder.Services.AddScoped<IEmailSenderService, SendEmailService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<ICartItemService, CartItemService>();
+builder.Services.AddScoped<ICartService, CartService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<IPromotionService, PromotionService>();
 //Product
 builder.Services.AddScoped<IProductService, ProductService>();
 // Add Session
@@ -57,7 +61,14 @@ builder.Services.AddSession(options =>
 });
 
 // JWT Config
-var jwtSettings = builder.Configuration.GetSection("Jwt");
+var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+
+// Lấy các giá trị và cung cấp chuỗi rỗng ("") nếu bị thiếu, để tránh lỗi null
+// khi khởi tạo SymmetricSecurityKey.
+var jwtKey = jwtSettings["Key"] ?? "";
+var jwtIssuer = jwtSettings["Issuer"];
+var jwtAudience = jwtSettings["Audience"];
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -71,10 +82,12 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
-        ValidIssuer = jwtSettings["Issuer"],
-        ValidAudience = jwtSettings["Audience"],
+
+        // 💡 Đảm bảo các giá trị không null
+        ValidIssuer = jwtIssuer,
+        ValidAudience = jwtAudience,
         IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(jwtSettings["Key"]))
+            Encoding.UTF8.GetBytes(jwtKey))
     };
 });
 

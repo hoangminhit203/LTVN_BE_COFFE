@@ -189,6 +189,7 @@ namespace LVTN_BE_COFFE.Services.Services
             }
 
             user.IsActive = true;
+            user.EmailConfirmed = true;
             await _userManager.UpdateAsync(user);
 
             _httpContextAccessor.HttpContext?.Session?.Remove("OtpCode");
