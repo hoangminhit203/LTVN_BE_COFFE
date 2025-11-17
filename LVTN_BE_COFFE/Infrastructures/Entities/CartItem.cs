@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LVTN_BE_COFFE.Infrastructures.Entities;
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -12,6 +13,7 @@ public class CartItem
 
     [Required]
     public int ProductId { get; set; }
+    public string UserId { get; set; } = null!;
 
     [Required]
     public int Quantity { get; set; } = 1;
@@ -22,8 +24,12 @@ public class CartItem
     [ForeignKey(nameof(CartId))]
     public Cart Cart { get; set; }
 
+    [ForeignKey(nameof(UserId))]
+    public AspNetUsers? User { get; set; } = null!;
+
     [ForeignKey(nameof(ProductId))]
     public Product Product { get; set; }
     [NotMapped]
-    public decimal Subtotal => Product != null ? Product.Price * Quantity : 0;
+    public decimal UnitPrice { get; set; }   // giá lúc thêm vào giỏ
+    public decimal Subtotal => UnitPrice * Quantity;
 }

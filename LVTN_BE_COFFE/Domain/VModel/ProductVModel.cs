@@ -6,16 +6,6 @@ using System.ComponentModel.DataAnnotations;
 
 namespace LVTN_BE_COFFE.Domain.VModel
 {
-    // Result model (giữ nguyên)
-    //public class Result<T>
-    //{
-    //    public bool IsSuccess { get; set; }
-    //    public T? Data { get; set; }
-    //    public string? Message { get; set; }
-    //    public string? Error { get; set; }
-    //}
-
-    // ProductCreateVModel (Loại bỏ Sku, IsActive, BranchId; thêm Description, IsFeatured, IsOnSale)
     public class ProductCreateVModel
     {
         [Required]
@@ -71,7 +61,7 @@ namespace LVTN_BE_COFFE.Domain.VModel
         public List<string>? FlavorNotes { get; set; }
         public List<string>? BrewingMethods { get; set; }
         // Navigation property
-        public CategoryResponse? Category { get; set; }
+        public List<CategoryResponse>? Category { get; set; }
     }
 
     // ProductFilterVModel (Loại bỏ BranchId, thêm lọc cho ProductAttributes)

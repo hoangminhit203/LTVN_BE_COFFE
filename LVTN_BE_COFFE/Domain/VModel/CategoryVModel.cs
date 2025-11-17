@@ -29,7 +29,7 @@ namespace LVTN_BE_COFFE.Domain.VModel
         public string? Description { get; set; }
 
         // Nếu bạn muốn hiển thị sản phẩm trong category:
-        public List<ProductResponse>? Products { get; set; }
+        //public List<ProductResponse>? Products { get; set; }
     }
 
     // Bộ lọc khi lấy danh sách category

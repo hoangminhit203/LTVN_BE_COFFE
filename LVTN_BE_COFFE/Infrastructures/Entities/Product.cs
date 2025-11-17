@@ -24,9 +24,11 @@ public class Product
 
     public bool IsFeatured { get; set; } = false;
     public bool IsOnSale { get; set; } = false;
+    //public bool IsActive { get; set; } = true;
+    //public bool IsDeleted { get; set; } = false;
 
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
 
     // Navigation properties
     public ProductAttribute? ProductAttribute { get; set; }
