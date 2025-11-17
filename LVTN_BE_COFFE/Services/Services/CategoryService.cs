@@ -103,15 +103,15 @@ namespace LVTN_BE_COFFE.Domain.Services
                 CategoryId = x.Id,
                 Name = x.Name,
                 Description = x.Description,
-                Products = x.Products?.Select(p => new ProductResponse
-                {
-                    ProductId = p.Id,
-                    Name = p.Name,
-                    Description = p.Description,
-                    Price = p.Price,
-                    ImageUrl = p.ImageUrl,
-                    CategoryId = x.Id // gán CategoryId trực tiếp từ Category
-                }).ToList()
+                //Products = x.Products?.Select(p => new ProductResponse
+                //{
+                //    ProductId = p.Id,
+                //    Name = p.Name,
+                //    Description = p.Description,
+                //    Price = p.Price,
+                //    ImageUrl = p.ImageUrl,
+                //    CategoryId = x.Id // gán CategoryId trực tiếp từ Category
+                //}).ToList()
             };
         }
 

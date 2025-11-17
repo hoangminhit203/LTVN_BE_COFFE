@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 [Index(nameof(Name), IsUnique = false)] // FULLTEXT index for search
 public class Product
@@ -14,6 +15,8 @@ public class Product
     public string? Description { get; set; }
 
     [Required]
+    [Column(TypeName = "decimal(18, 2)")]
+    [Range(0, double.MaxValue)]
     public decimal Price { get; set; }
 
     [Required]
@@ -24,9 +27,11 @@ public class Product
 
     public bool IsFeatured { get; set; } = false;
     public bool IsOnSale { get; set; } = false;
+    //public bool IsActive { get; set; } = true;
+    //public bool IsDeleted { get; set; } = false;
 
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
 
     // Navigation properties
     public ProductAttribute? ProductAttribute { get; set; }

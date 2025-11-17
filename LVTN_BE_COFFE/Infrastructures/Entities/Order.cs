@@ -8,16 +8,12 @@ using System.Linq;
 public class Order
 {
     [Key]
-    public int Id { get; set; }
+    public int OrderId { get; set; }
 
     public string? UserId { get; set; }
 
     [Required]
     public decimal TotalAmount { get; set; }
-
-    [Required]
-    [StringLength(255)]
-    public string ShippingAddress { get; set; } = string.Empty;
 
     [StringLength(50)]
     public string? ShippingMethod { get; set; }
@@ -42,6 +38,9 @@ public class Order
     [ForeignKey(nameof(PromotionId))]
     public Promotion? Promotion { get; set; }
 
+    public int ShippingAddressId { get; set; }
+    [ForeignKey(nameof(ShippingAddressId))]
+    public ShippingAddress ShippingAddress { get; set; }
     public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
     public ICollection<Payment> Payments { get; set; } = new List<Payment>();
 

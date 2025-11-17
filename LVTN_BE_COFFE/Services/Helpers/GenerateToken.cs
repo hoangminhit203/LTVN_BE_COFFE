@@ -12,7 +12,8 @@ namespace LVTN_BE_COFFE.Services.Helpers
         public static string GenerateTokenJWT(IConfiguration configuration, string userId, string? email, string? userName)
         {
             var claims = new[]
-              { new Claim(JwtRegisteredClaimNames.Sub, configuration["Jwt:Subject"] ?? "JWT Login"),
+              {
+                new Claim(JwtRegisteredClaimNames.Sub, configuration["Jwt:Subject"] ?? "JWT Login"),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                  new Claim(ClaimTypes.NameIdentifier, userId),      // ✅ đổi từ "UserId" sang ClaimTypes.NameIdentifier
                 new Claim(ClaimTypes.Email, email ?? ""),

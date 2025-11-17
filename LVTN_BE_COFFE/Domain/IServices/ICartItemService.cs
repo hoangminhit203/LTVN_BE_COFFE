@@ -7,9 +7,9 @@ namespace LVTN_BE_COFFE.Domain.IServices
 {
     public interface ICartItemService
     {
-        Task<ActionResult<CartItemResponse>> AddItemAsync(CartItemCreateVModel request);
-        Task<ActionResult<CartItemResponse>> UpdateItemAsync(CartItemUpdateVModel request);
-        Task<ActionResult<bool>> RemoveItemAsync(int cartItemId);
-        Task<ActionResult<IEnumerable<CartItemResponse>>> GetItemsByCartAsync(int cartId);
+        Task<ActionResult<CartItemResponse>> AddItem(string userId, CartItemCreateVModel request);
+        Task<ActionResult<CartItemResponse>> UpdateItem(string userId, CartItemUpdateVModel request);
+        Task<ActionResult<bool>> RemoveItem(string userId, int cartItemId);
+        Task<ActionResult<IEnumerable<CartItemResponse>>> GetItemsByUserId(string userId);
     }
 }

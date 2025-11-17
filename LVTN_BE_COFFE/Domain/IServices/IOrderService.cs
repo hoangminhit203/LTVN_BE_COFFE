@@ -1,16 +1,25 @@
-﻿using LVTN_BE_COFFE.Domain.VModel;
+﻿using LVTN_BE_COFFE.Domain.Model;
+using LVTN_BE_COFFE.Domain.VModel;
 using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace LVTN_BE_COFFE.Domain.IServices
+public interface IOrderService
 {
-    public interface IOrderService
-    {
-        Task<ActionResult<OrderResponse>> CreateOrderAsync(OrderCreateVModel request);
-        Task<ActionResult<OrderResponse>> UpdateOrderAsync(OrderUpdateVModel request);
-        Task<ActionResult<bool>> DeleteOrderAsync(int orderId);
-        Task<ActionResult<OrderResponse>> GetOrderByIdAsync(int orderId);
-        Task<ActionResult<IEnumerable<OrderResponse>>> GetOrdersAsync(OrderFilterVModel filter);
-    }
+    // Tạo đơn hàng từ giỏ hàng của user
+    Task<ActionResult<OrderResponse>?> CreateOrder(string userId, OrderCreateVModel model);
+
+    // Lấy danh sách đơn của user (có phân trang)
+    Task<ActionResult<PaginationModel<OrderResponse>>>GetOrdersByUser(string userId, OrderFilterVModel filter);
+
+    // Lấy chi tiết 1 đơn hàng
+    Task<ActionResult<OrderResponse>?> GetOrder(int orderId, string userId);
+
+    // Admin: Lấy toàn bộ đơn (phân trang)
+    //Task<ActionResult<PaginationModel<OrderResponse>>> GetAllOrders(OrderFilterVModel filter);
+
+    // Admin: Cập nhật trạng thái đơn
+    Task<ActionResult<bool>> UpdateOrderStatus(int orderId, string status);
+
+    // Xóa đơn hàng
+    Task<ActionResult<bool>> DeleteOrder(int orderId, string userId);
 }
