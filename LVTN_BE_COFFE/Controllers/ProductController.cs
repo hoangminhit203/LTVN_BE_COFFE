@@ -17,14 +17,14 @@ namespace LVTN_BE_COFFE.Controllers
             _productService = productService;
         }
 
-        // ✅ GET: api/Product
+        // GET: api/Product
         [HttpGet]
         public async Task<ActionResult<PaginationModel<ProductResponse>>> GetAll([FromQuery] ProductFilterVModel filter)
         {
             return await _productService.GetAllProducts(filter);
         }
 
-        // ✅ GET: api/Product/{id}
+        // GET: api/Product/{id}
         [HttpGet("{id}")]
         public async Task<ActionResult<ProductResponse>?> GetById(int id)
         {
@@ -34,17 +34,17 @@ namespace LVTN_BE_COFFE.Controllers
             return product;
         }
 
-        // ✅ GET: api/Product/find-by-name?name=Capuchino
-        [HttpGet("find-by-name")]
-        public async Task<ActionResult<ProductResponse>?> FindByName([FromQuery] string name)
-        {
-            var product = await _productService.FindByName(name);
-            if (product?.Value == null)
-                return NotFound("Product not found.");
-            return product;
-        }
+        //// ✅ GET: api/Product/find-by-name?name=Capuchino
+        //[HttpGet("find-by-name")]
+        //public async Task<ActionResult<ProductResponse>?> FindByName([FromQuery] string name)
+        //{
+        //    var product = await _productService.FindByName(name);
+        //    if (product?.Value == null)
+        //        return NotFound("Product not found.");
+        //    return product;
+        //}
 
-        // ✅ POST: api/Product
+        // POST: api/Product
         [HttpPost]
         public async Task<ActionResult<ProductResponse>?> Create([FromBody] ProductCreateVModel request)
         {
@@ -54,7 +54,7 @@ namespace LVTN_BE_COFFE.Controllers
             return CreatedAtAction(nameof(GetById), new { id = created.Value.ProductId }, created);
         }
 
-        // ✅ PUT: api/Product/{id}
+        // PUT: api/Product/{id}
         [HttpPut("{id}")]
         public async Task<ActionResult<ProductResponse>?> Update([FromBody] ProductUpdateVModel request, int id)
         {
@@ -64,7 +64,7 @@ namespace LVTN_BE_COFFE.Controllers
             return Ok(updated);
         }
 
-        // ✅ DELETE: api/Product/{id}
+        // DELETE: api/Product/{id}
         [HttpDelete("{id}")]
         public async Task<ActionResult<bool>> Delete(int id)
         {

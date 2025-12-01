@@ -21,10 +21,25 @@ namespace LVTN_BE_COFFE.Controllers
 
         private string GetUserId()
         {
+            // 1. Kiểm tra xem người dùng đã được xác thực chưa
+            if (!User.Identity.IsAuthenticated)
+            {
+                // Hoặc trả về 401/403, nhưng ném Exception theo cách cũ để khớp với lỗi của bạn
+                throw new System.Exception("User not authenticated");
+            }
 
-            var userId = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+            // 2. Trích xuất ID từ Claim
+            // Tùy thuộc vào cách bạn tạo Token, ID có thể là ClaimTypes.NameIdentifier HOẶC JwtRegisteredClaimNames.Sub.
+            // Vì token của bạn dùng 'sub' làm ID, ta dùng nó:
+            var userId = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                         ?? User.Claims.FirstOrDefault(c => c.Type == System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+
             if (string.IsNullOrEmpty(userId))
-                throw new Exception("User not authenticated");
+            {
+                // 3. Nếu không tìm thấy, ném lỗi
+                throw new System.Exception("User ID claim not found in token.");
+            }
+
             return userId;
         }
 

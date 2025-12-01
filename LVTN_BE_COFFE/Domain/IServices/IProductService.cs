@@ -8,9 +8,9 @@ namespace LVTN_BE_COFFE.Domain.IServices
     {
         Task<ActionResult<ProductResponse>?> CreateProduct(ProductCreateVModel request);
         Task<ActionResult<ProductResponse>?> UpdateProduct(ProductUpdateVModel request, int id);
-        Task<ActionResult<bool>> DeleteProduct(int productId);
-        Task<ActionResult<ProductResponse>?> GetProduct(int productId);
-        Task<ActionResult<ProductResponse>?> FindByName(string name);
+        Task<ActionResult<bool>> DeleteProduct(int id);
+        Task<ActionResult<ProductResponse>?> GetProduct(int id);
+        //Task<ActionResult<ProductResponse>?> FindByName(string name);
         Task<ActionResult<PaginationModel<ProductResponse>>> GetAllProducts(ProductFilterVModel filter);
     }
 }

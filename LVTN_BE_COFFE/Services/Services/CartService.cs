@@ -1,10 +1,11 @@
 ﻿using LVTN_BE_COFFE.Domain.IServices;
 using LVTN_BE_COFFE.Domain.VModel;
-using LVTN_BE_COFFE.Infrastructures;
+using LVTN_BE_COFFE.Infrastructures.Entities;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace LVTN_BE_COFFE.Domain.Services
 {
@@ -21,7 +22,8 @@ namespace LVTN_BE_COFFE.Domain.Services
         {
             var cart = await _context.Carts
                 .Include(c => c.CartItems)
-                .ThenInclude(ci => ci.Product)
+                    .ThenInclude(ci => ci.ProductVariant)
+                        .ThenInclude(v => v.Product)
                 .Include(c => c.User)
                 .FirstOrDefaultAsync(c => c.UserId == userId && c.Status == "Active");
 
@@ -35,6 +37,10 @@ namespace LVTN_BE_COFFE.Domain.Services
         public async Task<CartResponse> CreateCartIfNotExistsAsync(string userId)
         {
             var existing = await _context.Carts
+                .Include(c => c.CartItems)
+                    .ThenInclude(ci => ci.ProductVariant)
+                        .ThenInclude(v => v.Product)
+                .Include(c => c.User)
                 .FirstOrDefaultAsync(c => c.UserId == userId && c.Status == "Active");
 
             if (existing != null)
@@ -51,7 +57,6 @@ namespace LVTN_BE_COFFE.Domain.Services
             _context.Carts.Add(cart);
             await _context.SaveChangesAsync();
 
-            // reload with includes
             return MapToResponse(cart);
         }
 
@@ -59,52 +64,40 @@ namespace LVTN_BE_COFFE.Domain.Services
         {
             var cart = await _context.Carts
                 .Include(c => c.CartItems)
-                .FirstOrDefaultAsync(c => c.cartId == cartId && c.UserId == userId);
+                .FirstOrDefaultAsync(c => c.Id == cartId && c.UserId == userId);
 
             if (cart == null) return false;
 
             _context.CartItems.RemoveRange(cart.CartItems);
             cart.UpdatedAt = DateTime.UtcNow;
+
             await _context.SaveChangesAsync();
             return true;
         }
 
-        public async Task<CartResponse> MapCartToResponseAsync(int cartId)
-        {
-            var cart = await _context.Carts
-                .Include(c => c.CartItems)
-                .ThenInclude(ci => ci.Product)
-                .Include(c => c.User)
-                .FirstOrDefaultAsync(c => c.cartId == cartId);
-
-            if (cart == null) throw new InvalidOperationException("Cart not found");
-
-            return MapToResponse(cart);
-        }
-
         private static CartResponse MapToResponse(Cart cart)
         {
-            var response = new CartResponse
+            var items = cart.CartItems?.Select(i => new CartItemResponse
             {
-                CartId = cart.cartId,
+                Id = i.Id,
+                ProductVariantId = i.ProductVariantId,
+                ProductName = i.ProductVariant?.Product?.Name ?? "Unknown",
+                ProductPrice = i.UnitPrice,
+                Quantity = i.Quantity,
+                Subtotal = i.CalculatedSubtotal,
+                AddedAt = i.AddedAt
+            }).ToList() ?? new List<CartItemResponse>();
+
+            return new CartResponse
+            {
+                CartId = cart.Id,
                 UserId = cart.UserId,
                 UserName = cart.User?.UserName,
                 Status = cart.Status,
-                TotalPrice = cart.CartItems?.Sum(i => i.Subtotal) ?? 0m,
+                TotalPrice = items.Sum(i => i.Subtotal),
                 CreatedAt = cart.CreatedAt,
-                Items = cart.CartItems?.Select(i => new CartItemResponse
-                {
-                    Id = i.Id,
-                    ProductId = i.ProductId,
-                    ProductName = i.Product?.Name ?? string.Empty,
-                    ProductPrice = i.Product?.Price ?? 0m,
-                    Quantity = i.Quantity,
-                    Subtotal = i.Subtotal,
-                    AddedAt = i.AddedAt
-                }).ToList() ?? new List<CartItemResponse>()
+                Items = items
             };
-
-            return response;
         }
     }
 }

@@ -5,7 +5,7 @@ namespace LVTN_BE_COFFE.Domain.VModel
     public class OrderItemCreateVModel
     {
         [Required]
-        public int ProductId { get; set; }
+        public int ProductVariantId { get; set; }
 
         [Required]
         [Range(1, int.MaxValue)]
@@ -19,7 +19,7 @@ namespace LVTN_BE_COFFE.Domain.VModel
     public class OrderItemResponse
     {
         public int Id { get; set; }
-        public int ProductId { get; set; }
+        public int ProductVariantId { get; set; }
         public string ProductName { get; set; }
         public int Quantity { get; set; }
         public decimal PriceAtPurchase { get; set; }

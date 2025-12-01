@@ -12,24 +12,28 @@ public class CartItem
     public int CartId { get; set; }
 
     [Required]
-    public int ProductId { get; set; }
+    public int ProductVariantId { get; set; }
+
     public string UserId { get; set; } = null!;
 
     [Required]
     public int Quantity { get; set; } = 1;
-
     public DateTime AddedAt { get; set; } = DateTime.UtcNow;
 
     // Navigation properties
     [ForeignKey(nameof(CartId))]
-    public Cart Cart { get; set; }
+    public Cart Cart { get; set; } = null!;
 
     [ForeignKey(nameof(UserId))]
     public AspNetUsers? User { get; set; } = null!;
 
-    [ForeignKey(nameof(ProductId))]
-    public Product Product { get; set; }
+    [ForeignKey(nameof(ProductVariantId))]
+    public ProductVariant ProductVariant { get; set; } = null!;
+
+    [Required]
+    [Column(TypeName = "decimal(18, 2)")]
+    public decimal UnitPrice { get; set; }
+
     [NotMapped]
-    public decimal UnitPrice { get; set; }   // giá lúc thêm vào giỏ
-    public decimal Subtotal => UnitPrice * Quantity;
+    public decimal CalculatedSubtotal => UnitPrice * Quantity;
 }
