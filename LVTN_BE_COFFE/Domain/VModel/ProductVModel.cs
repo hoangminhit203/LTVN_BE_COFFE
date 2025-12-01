@@ -10,57 +10,51 @@ namespace LVTN_BE_COFFE.Domain.VModel
     {
         [Required]
         public string Name { get; set; } = string.Empty;
+
         public string? Description { get; set; }
-        [Required]
-        public decimal Price { get; set; }
-        public int Stock { get; set; } = 0;
-        public string? ImageUrl { get; set; }
-        public bool IsFeatured { get; set; } = false;
-        public bool IsOnSale { get; set; } = false;
+
         [Required]
         public int CategoryId { get; set; }
-        // Thuộc tính từ ProductAttributes
-        public string? RoastLevel { get; set; }
-        public string? BeanType { get; set; }
-        public string? Origin { get; set; }
-        public int? Acidity { get; set; }
-        public decimal? Weight { get; set; }
-        public string? Certifications { get; set; }
         public List<string>? FlavorNotes { get; set; }
         public List<string>? BrewingMethods { get; set; }
+        public List<ProductVariantCreateVM>? Variants { get; set; }
     }
 
     // ProductUpdateVModel
-    public class ProductUpdateVModel : ProductCreateVModel
+    public class ProductUpdateVModel
     {
+        [Required]
         public int ProductId { get; set; }
+
+        [Required]
+        public string Name { get; set; } = string.Empty;
+
+        public string? Description { get; set; }
+
+        public int CategoryId { get; set; }
+
+        public List<string>? FlavorNotes { get; set; }
+        public List<string>? BrewingMethods { get; set; }
+
+        public List<ProductVariantCreateVM>? Variants { get; set; }
     }
 
     // ProductResponse (Loại bỏ Sku, IsActive, BranchId; thêm từ ProductAttributes và navigation)
     public class ProductResponse
     {
         public int ProductId { get; set; }
+
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
-        public decimal Price { get; set; }
-        public int Stock { get; set; }
-        public string? ImageUrl { get; set; }
-        public bool IsFeatured { get; set; }
-        public bool IsOnSale { get; set; }
+
         public DateTime CreatedAt { get; set; }
-        public DateTime? UpdatedAt { get; set; }
-        public int CategoryId { get; set; }
-        // Từ ProductAttributes
-        public string? RoastLevel { get; set; }
-        public string? BeanType { get; set; }
-        public string? Origin { get; set; }
-        public int? Acidity { get; set; }
-        public decimal? Weight { get; set; }
-        public string? Certifications { get; set; }
-        // Từ FlavorNotes và BrewingMethods
+        public DateTime UpdatedAt { get; set; }
+
         public List<string>? FlavorNotes { get; set; }
         public List<string>? BrewingMethods { get; set; }
-        // Navigation property
+
+        public List<ProductVariantResponse>? Variants { get; set; }
+
         public List<CategoryResponse>? Category { get; set; }
     }
 
@@ -68,20 +62,21 @@ namespace LVTN_BE_COFFE.Domain.VModel
     public class ProductFilterVModel
     {
         public string? Name { get; set; }
-        public DateTime? CreatedDate { get; set; }
-        public DateTime? UpdatedBy { get; set; }
         public int? CategoryId { get; set; }
-        public bool? IsFeatured { get; set; }
-        public bool? IsOnSale { get; set; }
+
         public string? RoastLevel { get; set; }
         public string? BeanType { get; set; }
         public string? Origin { get; set; }
+
         public int? MinAcidity { get; set; }
         public int? MaxAcidity { get; set; }
+
         public decimal? MinWeight { get; set; }
         public decimal? MaxWeight { get; set; }
+
         public string? FlavorNote { get; set; }
         public string? BrewingMethod { get; set; }
+
         public int PageNumber { get; set; } = Numbers.Pagination.DefaultPageNumber;
         public int PageSize { get; set; } = Numbers.Pagination.DefaultPageSize;
     }

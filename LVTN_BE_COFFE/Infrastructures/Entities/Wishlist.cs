@@ -9,10 +9,10 @@ public class Wishlist
     public int Id { get; set; }
 
     [Required]
-    public string? UserId { get; set; }
+    public string? UserId { get; set; } = null!;
 
     [Required]
-    public int ProductId { get; set; }
+    public int ProductVariantId { get; set; }
 
     public DateTime AddedAt { get; set; } = DateTime.UtcNow;
 
@@ -20,6 +20,6 @@ public class Wishlist
     [ForeignKey(nameof(UserId))]
     public AspNetUsers? User { get; set; }
 
-    [ForeignKey(nameof(ProductId))]
-    public Product Product { get; set; }
+    [ForeignKey(nameof(ProductVariantId))]
+    public ProductVariant ProductVariant { get; set; } = null!;
 }

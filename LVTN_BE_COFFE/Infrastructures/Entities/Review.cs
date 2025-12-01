@@ -9,21 +9,21 @@ public class Review
     public int Id { get; set; }
 
     [Required]
-    public int ProductId { get; set; }
+    public int VariantId { get; set; }
 
     [Required]
     public string? UserId { get; set; }
 
     [Required]
-    public int Rating { get; set; }
+    public float Rating { get; set; }
 
     public string? Comment { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     // Navigation properties
-    [ForeignKey(nameof(ProductId))]
-    public Product Product { get; set; }
+    [ForeignKey(nameof(VariantId))]
+    public ProductVariant? Variant { get; set; }
 
     [ForeignKey(nameof(UserId))]
     public AspNetUsers? User { get; set; }

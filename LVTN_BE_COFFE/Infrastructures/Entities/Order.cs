@@ -13,7 +13,7 @@ public class Order
     public string? UserId { get; set; }
 
     [Required]
-    public decimal TotalAmount { get; set; }
+    public decimal TotalAmount { get; set; } // Tổng tiền trước giảm giá và phí ship
 
     [StringLength(50)]
     public string? ShippingMethod { get; set; }
@@ -22,16 +22,15 @@ public class Order
     [StringLength(20)]
     public string Status { get; set; } = "pending";
 
-    // 🔹 Dùng PromotionId làm khóa ngoại (chuẩn EF)
     public int? PromotionId { get; set; }
 
     [StringLength(50)]
-    public string? VoucherCode { get; set; } // chỉ lưu mã code nếu cần
+    public string? VoucherCode { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-    // 🔹 Navigation
+    // Navigation
     [ForeignKey(nameof(UserId))]
     public AspNetUsers? User { get; set; }
 
@@ -41,6 +40,7 @@ public class Order
     public int ShippingAddressId { get; set; }
     [ForeignKey(nameof(ShippingAddressId))]
     public ShippingAddress ShippingAddress { get; set; }
+
     public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
     public ICollection<Payment> Payments { get; set; } = new List<Payment>();
 
@@ -61,17 +61,6 @@ public class Order
     private decimal GetDiscountAmount()
     {
         if (Promotion == null) return 0m;
-        if (!Promotion.IsActive) return 0m;
-        if (Promotion.MinOrderValue.HasValue && TotalAmount < Promotion.MinOrderValue.Value)
-            return 0m;
-
-        decimal discount = Promotion.DiscountType switch
-        {
-            PromotionType.Percentage => (Promotion.DiscountValue / 100m) * TotalAmount,
-            PromotionType.Fixed => Promotion.DiscountValue,
-            _ => 0m
-        };
-
-        return Math.Min(discount, TotalAmount);
+        return 0m;
     }
 }

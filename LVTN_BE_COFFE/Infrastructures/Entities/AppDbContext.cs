@@ -28,10 +28,11 @@ public class AppDbContext : IdentityDbContext<AspNetUsers, AspNetRoles, string>
 
     // Coffee Shop Entities
     public DbSet<Product> Products { get; set; }
-    public DbSet<ProductAttribute> ProductAttributes { get; set; }
+    public DbSet<ProductVariant> ProductVariant { get; set; }
     public DbSet<FlavorNote> FlavorNotes { get; set; }
     public DbSet<ProductFlavorNote> ProductFlavorNotes { get; set; }
     public DbSet<BrewingMethod> BrewingMethods { get; set; }
+    public DbSet<ProductImage> ProductImage { get; set; }
     public DbSet<ProductBrewingMethod> ProductBrewingMethods { get; set; }
     public DbSet<Category> Categories { get; set; }
     public DbSet<Cart> Carts { get; set; }
@@ -49,9 +50,8 @@ public class AppDbContext : IdentityDbContext<AspNetUsers, AspNetRoles, string>
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        base.OnModelCreating(modelBuilder); // Required for ASP.NET Identity
+        base.OnModelCreating(modelBuilder);
 
-        // Configure AspNetUsers
         modelBuilder.Entity<AspNetUsers>()
             .HasIndex(u => u.UserName)
             .IsUnique();
@@ -64,130 +64,225 @@ public class AppDbContext : IdentityDbContext<AspNetUsers, AspNetRoles, string>
             .HasForeignKey(rt => rt.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // Configure RefreshTokens
         modelBuilder.Entity<RefreshToken>()
             .HasIndex(rt => rt.Token)
             .IsUnique();
 
-        // Configure Products (from your provided Product class)
-        modelBuilder.Entity<Product>()
-            .HasIndex(p => p.Name)
-            .IsUnique(false); // FULLTEXT index for search
-        modelBuilder.Entity<Product>()
-            .HasOne(p => p.ProductAttribute)
-            .WithOne(pa => pa.Product)
-            .HasForeignKey<ProductAttribute>(pa => pa.ProductId);
+        modelBuilder.Entity<Product>(entity =>
+        {
+            entity.HasKey(p => p.Id);
 
-        // Configure ProductAttributes
-        modelBuilder.Entity<ProductAttribute>()
-            .HasIndex(pa => new { pa.ProductId, pa.RoastLevel, pa.BeanType });
+            entity.HasIndex(p => p.Name).IsUnique(false);
 
-        // Configure FlavorNotes and ProductFlavorNotes (many-to-many)
-        modelBuilder.Entity<ProductFlavorNote>()
-            .HasKey(pfn => new { pfn.ProductId, pfn.FlavorNoteId });
-        modelBuilder.Entity<ProductFlavorNote>()
-            .HasOne(pfn => pfn.Product)
-            .WithMany(p => p.ProductFlavorNotes)
-            .HasForeignKey(pfn => pfn.ProductId);
-        modelBuilder.Entity<ProductFlavorNote>()
-            .HasOne(pfn => pfn.FlavorNote)
-            .WithMany(fn => fn.ProductFlavorNotes)
-            .HasForeignKey(pfn => pfn.FlavorNoteId);
+            entity.Property(p => p.Name)
+                  .HasMaxLength(255).IsRequired();
 
-        // Configure BrewingMethods and ProductBrewingMethods (many-to-many)
-        modelBuilder.Entity<ProductBrewingMethod>()
-            .HasKey(pbm => new { pbm.ProductId, pbm.BrewingMethodId });
-        modelBuilder.Entity<ProductBrewingMethod>()
-            .HasOne(pbm => pbm.Product)
-            .WithMany(p => p.ProductBrewingMethods)
-            .HasForeignKey(pbm => pbm.ProductId);
-        modelBuilder.Entity<ProductBrewingMethod>()
-            .HasOne(pbm => pbm.BrewingMethod)
-            .WithMany(bm => bm.ProductBrewingMethods)
-            .HasForeignKey(pbm => pbm.BrewingMethodId);
+            entity.HasMany(p => p.Variants)
+                  .WithOne(v => v.Product)
+                  .HasForeignKey(v => v.ProductId)
+                  .OnDelete(DeleteBehavior.Cascade);
 
-        // Configure Carts
-        modelBuilder.Entity<Cart>()
-            .HasOne(c => c.User)
-            .WithMany()
-            .HasForeignKey(c => c.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
+            entity.HasMany(p => p.Images)
+                  .WithOne(i => i.Product)
+                  .HasForeignKey(i => i.ProductId)
+                  .OnDelete(DeleteBehavior.Cascade);
 
-        // Configure CartItems
-        modelBuilder.Entity<CartItem>()
-            .HasOne(ci => ci.Cart)
-            .WithMany(c => c.CartItems)
-            .HasForeignKey(ci => ci.CartId)
-            .OnDelete(DeleteBehavior.NoAction);
-        modelBuilder.Entity<CartItem>()
-            .HasOne(ci => ci.Product)
-            .WithMany(p => p.CartItems)
-            .HasForeignKey(ci => ci.ProductId)
-            .OnDelete(DeleteBehavior.NoAction); // 💡 Bổ sung
+            entity.HasMany(p => p.ProductFlavorNotes)
+                  .WithOne(fn => fn.Product)
+                  .HasForeignKey(fn => fn.ProductId)
+                  .OnDelete(DeleteBehavior.Cascade);
 
-        // Configure Orders
-        modelBuilder.Entity<Order>()
-            .HasOne(o => o.User)
-            .WithMany()
-            .HasForeignKey(o => o.UserId)
-            .OnDelete(DeleteBehavior.NoAction);
+            entity.HasMany(p => p.ProductBrewingMethods)
+                  .WithOne(bm => bm.Product)
+                  .HasForeignKey(bm => bm.ProductId)
+                  .OnDelete(DeleteBehavior.Cascade);
 
-        modelBuilder.Entity<Order>()
-            .HasOne(o => o.Promotion)
-            .WithMany(p => p.Orders)
-            .HasForeignKey(o => o.PromotionId) // 🔹 DÙNG PromotionId, KHÔNG dùng VoucherCode
-            .OnDelete(DeleteBehavior.SetNull);
+            entity.HasMany(p => p.Categories)
+                  .WithMany(c => c.Products);
 
-        // Configure OrderItems
-        modelBuilder.Entity<OrderItem>()
-            .HasOne(oi => oi.Order)
-            .WithMany(o => o.OrderItems)
-            .HasForeignKey(oi => oi.OrderId);
-        modelBuilder.Entity<OrderItem>()
-            .HasOne(oi => oi.Product)
-            .WithMany(p => p.OrderItems)
-            .HasForeignKey(oi => oi.ProductId);
+        });
+        modelBuilder.Entity<ProductImage>(entity =>
+        {
 
-        // Configure Payments
+            entity.HasOne(i => i.Product)
+                  .WithMany(p => p.Images)
+                  .HasForeignKey(i => i.ProductId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(i => i.ProductVariant)
+                  .WithMany(v => v.Images)
+                  .HasForeignKey(i => i.ProductVariantId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<ProductVariant>(entity =>
+        {
+            entity.HasKey(v => v.Id);
+
+            entity.HasIndex(v => v.Sku).IsUnique(true);
+
+            entity.Property(v => v.Sku)
+                  .HasMaxLength(100).IsRequired();
+
+            entity.Property(v => v.Price)
+                  .HasColumnType("decimal(18,2)").IsRequired();
+
+            entity.Property(v => v.Stock).IsRequired();
+
+            entity.HasIndex(v => new { v.ProductId, v.RoastLevel, v.BeanType });
+
+            entity.HasMany(v => v.Images)
+                  .WithOne(i => i.ProductVariant)
+                  .HasForeignKey(i => i.ProductVariantId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasMany(p => p.Reviews)
+                  .WithOne(r => r.Variant)
+                  .HasForeignKey(r => r.VariantId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+
+        modelBuilder.Entity<ProductImage>(entity =>
+        {
+            entity.HasKey(i => i.Id);
+            entity.Property(i => i.ImageUrl).HasMaxLength(500).IsRequired();
+            entity.Property(i => i.PublicId).HasMaxLength(255);
+
+            entity.HasOne(i => i.Product)
+                  .WithMany(p => p.Images)
+                  .HasForeignKey(i => i.ProductId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(i => i.ProductVariant)
+                  .WithMany(v => v.Images)
+                  .HasForeignKey(i => i.ProductVariantId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<FlavorNote>(entity =>
+        {
+            entity.HasKey(fn => fn.Id);
+        });
+
+        modelBuilder.Entity<ProductFlavorNote>(entity =>
+        {
+            entity.HasKey(pfn => new { pfn.ProductId, pfn.FlavorNoteId });
+
+            entity.HasOne(pfn => pfn.Product)
+                  .WithMany(p => p.ProductFlavorNotes)
+                  .HasForeignKey(pfn => pfn.ProductId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(pfn => pfn.FlavorNote)
+                  .WithMany(fn => fn.ProductFlavorNotes)
+                  .HasForeignKey(pfn => pfn.FlavorNoteId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<BrewingMethod>(entity =>
+        {
+            entity.HasKey(bm => bm.Id);
+        });
+
+        modelBuilder.Entity<ProductBrewingMethod>(entity =>
+        {
+            entity.HasKey(pbm => new { pbm.ProductId, pbm.BrewingMethodId });
+
+            entity.HasOne(pbm => pbm.Product)
+                  .WithMany(p => p.ProductBrewingMethods)
+                  .HasForeignKey(pbm => pbm.ProductId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(pbm => pbm.BrewingMethod)
+                  .WithMany(bm => bm.ProductBrewingMethods)
+                  .HasForeignKey(pbm => pbm.BrewingMethodId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Cart>(entity =>
+        {
+            entity.HasOne(c => c.User)
+                  .WithMany()
+                  .HasForeignKey(c => c.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<CartItem>(entity =>
+        {
+            entity.HasOne(ci => ci.Cart)
+                  .WithMany(c => c.CartItems)
+                  .HasForeignKey(ci => ci.CartId)
+                  .OnDelete(DeleteBehavior.NoAction);
+
+            entity.HasOne(ci => ci.ProductVariant)
+                  .WithMany(v => v.CartItems)
+                  .HasForeignKey(ci => ci.ProductVariantId)
+                  .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<Order>(entity =>
+        {
+            entity.HasOne(o => o.User)
+                  .WithMany()
+                  .HasForeignKey(o => o.UserId)
+                  .OnDelete(DeleteBehavior.NoAction);
+
+            entity.HasOne(o => o.Promotion)
+                  .WithMany(p => p.Orders)
+                  .HasForeignKey(o => o.PromotionId)
+                  .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<OrderItem>(entity =>
+        {
+            entity.HasOne(oi => oi.Order)
+                  .WithMany(o => o.OrderItems)
+                  .HasForeignKey(oi => oi.OrderId);
+
+            entity.HasOne(oi => oi.ProductVariant)
+                  .WithMany(v => v.OrderItems)
+                  .HasForeignKey(oi => oi.ProductVariantId);
+        });
+
         modelBuilder.Entity<Payment>()
-            .HasIndex(p => p.TransactionId)
-            .IsUnique();
+            .HasIndex(p => p.TransactionId).IsUnique();
+
         modelBuilder.Entity<Payment>()
             .HasOne(p => p.Order)
             .WithMany(o => o.Payments)
             .HasForeignKey(p => p.OrderId);
 
-        // Configure Reviews
-        modelBuilder.Entity<Review>()
-            .HasOne(r => r.Product)
-            .WithMany(p => p.Reviews)
-            .HasForeignKey(r => r.ProductId);
-        modelBuilder.Entity<Review>()
-            .HasOne(r => r.User)
-            .WithMany()
-            .HasForeignKey(r => r.UserId);
+        modelBuilder.Entity<Review>(entity =>
+        {
+            entity.Property(r => r.Comment)
+                  .HasMaxLength(2000);
 
-        // Configure Wishlists
-        modelBuilder.Entity<Wishlist>()
-            .HasOne(w => w.User)
-            .WithMany()
-            .HasForeignKey(w => w.UserId);
-        modelBuilder.Entity<Wishlist>()
-            .HasOne(w => w.Product)
-            .WithMany(p => p.Wishlists)
-            .HasForeignKey(w => w.ProductId);
+            entity.HasOne(r => r.Variant)
+                  .WithMany(p => p.Reviews)
+                  .HasForeignKey(r => r.VariantId);
 
-        // Configure Promotions
+            entity.HasOne(r => r.User)
+                  .WithMany()
+                  .HasForeignKey(r => r.UserId);
+        });
+
+        modelBuilder.Entity<Wishlist>(entity =>
+        {
+            entity.HasOne(w => w.User)
+                  .WithMany()
+                  .HasForeignKey(w => w.UserId);
+
+            entity.HasOne(w => w.ProductVariant)
+                  .WithMany(p => p.Wishlist)
+                  .HasForeignKey(w => w.ProductVariantId);
+        });
+
         modelBuilder.Entity<Promotion>()
-            .HasIndex(p => p.Code)
-            .IsUnique();
+            .HasIndex(p => p.Code).IsUnique();
 
-        // Configure Contacts
         modelBuilder.Entity<Contact>()
             .HasIndex(c => c.Email);
 
-        // RefreshToken - User
-        modelBuilder.Entity<RefreshToken>()
+    modelBuilder.Entity<RefreshToken>()
             .HasOne(rt => rt.User)
             .WithMany(u => u.RefreshTokens)
             .HasForeignKey(rt => rt.UserId);

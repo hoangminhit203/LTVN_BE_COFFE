@@ -8,7 +8,7 @@ using System.Linq;
 public class Cart
 {
     [Key]
-    public int cartId { get; set; }
+    public int Id { get; set; }
 
     public string UserId { get; set; } = null!;
 
@@ -21,7 +21,8 @@ public class Cart
     public ICollection<CartItem> CartItems { get; set; } = new List<CartItem>();
 
     [NotMapped]
-    public decimal TotalPrice => CartItems?.Sum(i => i.Subtotal) ?? 0;
+    public decimal TotalPrice => CartItems.Sum(item => item.CalculatedSubtotal);
 
+    [StringLength(50)]
     public string Status { get; set; } = "Active";
 }

@@ -54,10 +54,10 @@ namespace LVTN_BE_COFFE.Controllers
 
         // GET: api/Order/{id}
         [HttpGet]
-        public async Task<ActionResult<PaginationModel<OrderResponse>>> GetOrderUser([FromQuery] OrderFilterVModel filter)
+        public async Task<ActionResult<IEnumerable<OrderResponse>>> GetOrderUser()
         {
             var userId = GetUserId();
-            return await _orderService.GetOrdersByUser(userId, filter);
+            return await _orderService.GetOrdersByUser(userId);
         }
 
         // POST: api/Order
@@ -68,18 +68,12 @@ namespace LVTN_BE_COFFE.Controllers
             return await _orderService.CreateOrder(userId, model);
         }
 
-        // PUT: api/Order
-        //[HttpPut]
-        //public async Task<ActionResult<OrderResponse>> Update([FromBody] OrderUpdateVModel request)
-        //{
-        //    return await _orderService.UpdateOrderAsync(request);
-        //}
+        [HttpPut]
+        public async Task<ActionResult<bool>> updateStatus(int orderId, string status)
+        {
+            var userId = GetUserId();
+            return await _orderService.UpdateOrderStatus(orderId, status);
+        }
 
-        // DELETE: api/Order/{id}
-        //[HttpDelete("{id}")]
-        //public async Task<ActionResult<bool>> Delete(int id)
-        //{
-        //    return await _orderService.DeleteOrder(id);
-        //}
     }
 }

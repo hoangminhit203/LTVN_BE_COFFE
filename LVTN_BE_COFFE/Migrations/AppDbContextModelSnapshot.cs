@@ -76,18 +76,19 @@ namespace LVTN_BE_COFFE.Migrations
 
             modelBuilder.Entity("Cart", b =>
                 {
-                    b.Property<int>("cartId")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("cartId"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -96,7 +97,7 @@ namespace LVTN_BE_COFFE.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.HasKey("cartId");
+                    b.HasKey("Id");
 
                     b.HasIndex("UserId");
 
@@ -117,11 +118,14 @@ namespace LVTN_BE_COFFE.Migrations
                     b.Property<int>("CartId")
                         .HasColumnType("int");
 
-                    b.Property<int>("ProductId")
+                    b.Property<int>("ProductVariantId")
                         .HasColumnType("int");
 
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasColumnType("decimal(18, 2)");
 
                     b.Property<string>("UserId")
                         .IsRequired()
@@ -131,7 +135,7 @@ namespace LVTN_BE_COFFE.Migrations
 
                     b.HasIndex("CartId");
 
-                    b.HasIndex("ProductId");
+                    b.HasIndex("ProductVariantId");
 
                     b.HasIndex("UserId");
 
@@ -617,19 +621,27 @@ namespace LVTN_BE_COFFE.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal>("PriceAtPurchase")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(18, 2)");
 
-                    b.Property<int>("ProductId")
+                    b.Property<string>("ProductNameAtPurchase")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<int>("ProductVariantId")
                         .HasColumnType("int");
 
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
 
+                    b.Property<string>("VariantDetailsJson")
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("OrderId");
 
-                    b.HasIndex("ProductId");
+                    b.HasIndex("ProductVariantId");
 
                     b.ToTable("OrderItems");
                 });
@@ -694,10 +706,6 @@ namespace LVTN_BE_COFFE.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("ImageUrl")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
                     b.Property<bool>("IsFeatured")
                         .HasColumnType("bit");
 
@@ -709,12 +717,6 @@ namespace LVTN_BE_COFFE.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
-                    b.Property<decimal>("Price")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("Stock")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -723,47 +725,6 @@ namespace LVTN_BE_COFFE.Migrations
                     b.HasIndex("Name");
 
                     b.ToTable("Products");
-                });
-
-            modelBuilder.Entity("ProductAttribute", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int?>("Acidity")
-                        .HasColumnType("int");
-
-                    b.Property<string>("BeanType")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("Certifications")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("Origin")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("RoastLevel")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<decimal?>("Weight")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ProductId")
-                        .IsUnique();
-
-                    b.HasIndex("ProductId", "RoastLevel", "BeanType");
-
-                    b.ToTable("ProductAttributes");
                 });
 
             modelBuilder.Entity("ProductBrewingMethod", b =>
@@ -796,6 +757,102 @@ namespace LVTN_BE_COFFE.Migrations
                     b.ToTable("ProductFlavorNotes");
                 });
 
+            modelBuilder.Entity("ProductImage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsMain")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ProductVariantId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PublicId")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("ProductVariantId");
+
+                    b.ToTable("ProductImage");
+                });
+
+            modelBuilder.Entity("ProductVariant", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("Acidity")
+                        .HasColumnType("int");
+
+                    b.Property<string>("BeanType")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Certifications")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("Origin")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RoastLevel")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Sku")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("Stock")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("Weight")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Sku")
+                        .IsUnique();
+
+                    b.HasIndex("ProductId", "RoastLevel", "BeanType");
+
+                    b.ToTable("ProductVariant");
+                });
+
             modelBuilder.Entity("Promotion", b =>
                 {
                     b.Property<int>("Id")
@@ -826,11 +883,17 @@ namespace LVTN_BE_COFFE.Migrations
                     b.Property<DateTime?>("EndDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<decimal?>("MaxDiscountAmount")
+                        .HasColumnType("decimal(18, 2)");
+
                     b.Property<decimal?>("MinOrderValue")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime?>("StartDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<int?>("UsageLimit")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -849,26 +912,27 @@ namespace LVTN_BE_COFFE.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Comment")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Rating")
-                        .HasColumnType("int");
+                    b.Property<float>("Rating")
+                        .HasColumnType("real");
 
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<int>("VariantId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("ProductId");
-
                     b.HasIndex("UserId");
+
+                    b.HasIndex("VariantId");
 
                     b.ToTable("Reviews");
                 });
@@ -916,7 +980,10 @@ namespace LVTN_BE_COFFE.Migrations
                     b.Property<DateTime>("AddedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("ProductId")
+                    b.Property<int?>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProductVariantId")
                         .HasColumnType("int");
 
                     b.Property<string>("UserId")
@@ -926,6 +993,8 @@ namespace LVTN_BE_COFFE.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ProductId");
+
+                    b.HasIndex("ProductVariantId");
 
                     b.HasIndex("UserId");
 
@@ -951,9 +1020,9 @@ namespace LVTN_BE_COFFE.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("Product", "Product")
+                    b.HasOne("ProductVariant", "ProductVariant")
                         .WithMany("CartItems")
-                        .HasForeignKey("ProductId")
+                        .HasForeignKey("ProductVariantId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
@@ -965,7 +1034,7 @@ namespace LVTN_BE_COFFE.Migrations
 
                     b.Navigation("Cart");
 
-                    b.Navigation("Product");
+                    b.Navigation("ProductVariant");
 
                     b.Navigation("User");
                 });
@@ -1080,15 +1149,15 @@ namespace LVTN_BE_COFFE.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Product", "Product")
+                    b.HasOne("ProductVariant", "ProductVariant")
                         .WithMany("OrderItems")
-                        .HasForeignKey("ProductId")
+                        .HasForeignKey("ProductVariantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Order");
 
-                    b.Navigation("Product");
+                    b.Navigation("ProductVariant");
                 });
 
             modelBuilder.Entity("Payment", b =>
@@ -1100,17 +1169,6 @@ namespace LVTN_BE_COFFE.Migrations
                         .IsRequired();
 
                     b.Navigation("Order");
-                });
-
-            modelBuilder.Entity("ProductAttribute", b =>
-                {
-                    b.HasOne("Product", "Product")
-                        .WithOne("ProductAttribute")
-                        .HasForeignKey("ProductAttribute", "ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("ProductBrewingMethod", b =>
@@ -1151,23 +1209,51 @@ namespace LVTN_BE_COFFE.Migrations
                     b.Navigation("Product");
                 });
 
-            modelBuilder.Entity("Review", b =>
+            modelBuilder.Entity("ProductImage", b =>
                 {
                     b.HasOne("Product", "Product")
-                        .WithMany("Reviews")
+                        .WithMany("Images")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("ProductVariant", "ProductVariant")
+                        .WithMany("Images")
+                        .HasForeignKey("ProductVariantId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("Product");
+
+                    b.Navigation("ProductVariant");
+                });
+
+            modelBuilder.Entity("ProductVariant", b =>
+                {
+                    b.HasOne("Product", "Product")
+                        .WithMany("Variants")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("Review", b =>
+                {
                     b.HasOne("LVTN_BE_COFFE.Infrastructures.Entities.AspNetUsers", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Product");
+                    b.HasOne("ProductVariant", "Variant")
+                        .WithMany("Reviews")
+                        .HasForeignKey("VariantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("User");
+
+                    b.Navigation("Variant");
                 });
 
             modelBuilder.Entity("ShippingAddress", b =>
@@ -1183,9 +1269,13 @@ namespace LVTN_BE_COFFE.Migrations
 
             modelBuilder.Entity("Wishlist", b =>
                 {
-                    b.HasOne("Product", "Product")
+                    b.HasOne("Product", null)
                         .WithMany("Wishlists")
-                        .HasForeignKey("ProductId")
+                        .HasForeignKey("ProductId");
+
+                    b.HasOne("ProductVariant", "ProductVariant")
+                        .WithMany("Wishlist")
+                        .HasForeignKey("ProductVariantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1195,7 +1285,7 @@ namespace LVTN_BE_COFFE.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Product");
+                    b.Navigation("ProductVariant");
 
                     b.Navigation("User");
                 });
@@ -1231,19 +1321,28 @@ namespace LVTN_BE_COFFE.Migrations
 
             modelBuilder.Entity("Product", b =>
                 {
-                    b.Navigation("CartItems");
-
-                    b.Navigation("OrderItems");
-
-                    b.Navigation("ProductAttribute");
+                    b.Navigation("Images");
 
                     b.Navigation("ProductBrewingMethods");
 
                     b.Navigation("ProductFlavorNotes");
 
-                    b.Navigation("Reviews");
+                    b.Navigation("Variants");
 
                     b.Navigation("Wishlists");
+                });
+
+            modelBuilder.Entity("ProductVariant", b =>
+                {
+                    b.Navigation("CartItems");
+
+                    b.Navigation("Images");
+
+                    b.Navigation("OrderItems");
+
+                    b.Navigation("Reviews");
+
+                    b.Navigation("Wishlist");
                 });
 
             modelBuilder.Entity("Promotion", b =>

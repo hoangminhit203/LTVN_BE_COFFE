@@ -9,7 +9,7 @@ public interface IOrderService
     Task<ActionResult<OrderResponse>?> CreateOrder(string userId, OrderCreateVModel model);
 
     // Lấy danh sách đơn của user (có phân trang)
-    Task<ActionResult<PaginationModel<OrderResponse>>>GetOrdersByUser(string userId, OrderFilterVModel filter);
+    Task<ActionResult<IEnumerable<OrderResponse>>> GetOrdersByUser(string userId);
 
     // Lấy chi tiết 1 đơn hàng
     Task<ActionResult<OrderResponse>?> GetOrder(int orderId, string userId);
@@ -21,5 +21,5 @@ public interface IOrderService
     Task<ActionResult<bool>> UpdateOrderStatus(int orderId, string status);
 
     // Xóa đơn hàng
-    Task<ActionResult<bool>> DeleteOrder(int orderId, string userId);
+    Task<ActionResult<bool>> CancelOrder(int orderId, string userId);
 }

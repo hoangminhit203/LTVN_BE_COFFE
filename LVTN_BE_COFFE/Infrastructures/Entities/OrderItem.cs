@@ -10,7 +10,12 @@ public class OrderItem
     public int OrderId { get; set; }
 
     [Required]
-    public int ProductId { get; set; }
+    public int ProductVariantId { get; set; }
+
+    [Required, StringLength(255)]
+    public string ProductNameAtPurchase { get; set; } = null!;
+
+    public string? VariantDetailsJson { get; set; }
 
     [Required]
     public int Quantity { get; set; }
@@ -24,8 +29,8 @@ public class OrderItem
 
     // Navigation properties
     [ForeignKey(nameof(OrderId))]
-    public Order Order { get; set; }
+    public Order Order { get; set; } = null!;
 
-    [ForeignKey(nameof(ProductId))]
-    public Product Product { get; set; }
+    [ForeignKey(nameof(ProductVariantId))]
+    public ProductVariant ProductVariant { get; set; } = null!;
 }
