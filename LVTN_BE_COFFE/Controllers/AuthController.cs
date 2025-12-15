@@ -34,7 +34,12 @@ namespace LVTN_BE_COFFE.Controllers
         [HttpGet("Me")]
         public async Task<ActionResult<MeVModel>> Me()
         {
-            return await _authService.Me();
+            var result = await _authService.Me();
+            if (result.IsSuccess)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
         }
 
         [HttpPost("login")]
@@ -74,13 +79,18 @@ namespace LVTN_BE_COFFE.Controllers
             return NoContent();
         }
         [HttpPost("Register")]
-        public async Task<ActionResult<RegisterResponse>> Register([FromBody] RegisterVModel model)
+        public async Task<IActionResult> Register([FromBody] RegisterVModel model)
         {
             if (!ModelState.IsValid)
             {
                 return new BadRequestObjectResult(ModelState);
             }
-            return await _authService.Register(model);
+            var result = await _authService.Register(model);
+            if (result.IsSuccess)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
         }
         [HttpPost("ChangePassword")]
         [Authorize]
@@ -90,46 +100,66 @@ namespace LVTN_BE_COFFE.Controllers
             {
                 return new BadRequestObjectResult(ModelState);
             }
-            return await _authService.ChangePassword(model);
+            return (IActionResult)await _authService.ChangePassword(model);
         }
         [HttpPost("ForgotPassword")]
-        public async Task<ActionResult<RegisterResponse>> ForgotPassword([FromBody] ForgotPasswordVModel model)
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordVModel model)
         {
             if (!ModelState.IsValid)
             {
                 return new BadRequestObjectResult(ModelState);
             }
-            return await _authService.ForgotPassword(model);
+            var result = await _authService.ForgotPassword(model);
+            if (result.IsSuccess)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
         }
         [HttpPost("ResetPassword")]
-        public async Task<ActionResult<RegisterResponse>> ResetPassword([FromBody] ResetPasswordVModel model)
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordVModel model)
         {
             if (!ModelState.IsValid)
             {
                 return new BadRequestObjectResult(ModelState);
             }
-            return await _authService.ResetPassword(model);
+            var result = await _authService.ResetPassword(model);
+            if (result.IsSuccess)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
         }
         [HttpPost("ConfirmEmail")]
-        public async Task<ActionResult<RegisterResponse>> ConfirmEmail([FromBody] ConfirmEmailVModel model)
+        public async Task<IActionResult> ConfirmEmail([FromBody] ConfirmEmailVModel model)
         {
             if (!ModelState.IsValid)
             {
                 return new BadRequestObjectResult(ModelState);
             }
 
-            return await _authService.ConfirmEmail(model.Otp, model.Email);
+            var result = await _authService.ConfirmEmail(model.Otp, model.Email);
+            if (result.IsSuccess)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
         }
         [HttpPut("UpdateProfile")]
         [Authorize]
-        public async Task<ActionResult<RegisterResponse>> UpdateProfile([FromBody] UpdateProfileVModel model)
+        public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileVModel model)
         {
             if (!ModelState.IsValid)
             {
                 return new BadRequestObjectResult(ModelState);
             }
 
-            return await _authService.UpdateProfile(model);
+            var result = await _authService.UpdateProfile(model);
+            if (result.IsSuccess)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
         }
     }
     public class LoginRequest { public string Email { get; set; } = null!; public string Password { get; set; } = null!; }
