@@ -1,112 +1,77 @@
-﻿<div style="padding: 0; box-sizing: border-box; min-height: 100vh; background-color: #f8f9fa; font-family: Arial, sans-serif;">
-    <div style="width: 80%; max-width: 600px; margin: 20px auto; background-color: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Verification</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f4f4f4; font-family:Arial, Helvetica, sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+            <td align="center" style="padding:30px 0;">
+                <table width="600" cellpadding="0" cellspacing="0"
+                       style="background:#ffffff; border-radius:8px; overflow:hidden; box-shadow:0 4px 10px rgba(0,0,0,0.08);">
 
-        <!-- Header với logo và tiêu đề -->
-        <div style="text-align: center; margin-bottom: 30px;">
-            <img style="width: 80px; height: 80px; margin-bottom: 15px;" src="https://cdn-icons-png.flaticon.com/512/2230/2230568.png" alt="Logo">
-            <h1 style="font-size: 1.8rem; margin: 0; color: #2c3e50; font-weight: 600;">Đặt Hàng Thành Công</h1>
-            <hr style="width: 60px; margin: 15px auto; border: 2px solid #4a90e2; border-radius: 2px;">
-        </div>
+                    <!-- HEADER -->
+                    <tr>
+                        <td style="background:#6f4e37; padding:20px; text-align:center;">
+                            <h1 style="margin:0; color:#ffffff;">☕ Coffee E-Commerce</h1>
+                            <p style="margin:5px 0 0; color:#f5e9e2;">Account Verification</p>
+                        </td>
+                    </tr>
 
-        <!-- Lời chào -->
-        <p style="font-size: 16px; color: #555; margin-bottom: 25px; line-height: 1.5;">
-            Xin chào <strong>{{fullName}}</strong>,<br>
-            Cảm ơn bạn đã mua sắm tại cửa hàng của chúng tôi. Dưới đây là thông tin chi tiết đơn hàng của bạn:
-        </p>
+                    <!-- BODY -->
+                    <tr>
+                        <td style="padding:30px; color:#333333;">
+                            <h2 style="margin-top:0;">Welcome!</h2>
+                            <p>
+                                Thank you for registering an account at
+                                <strong>Coffee E-Commerce</strong>.
+                            </p>
 
-        <!-- Order Info -->
-        <div style="background-color: #f8f9ff; border-left: 4px solid #4a90e2; border-radius: 6px; padding: 20px; margin: 25px 0;">
-            <h3 style="margin: 0 0 15px 0; color: #4a90e2; font-size: 18px; display: flex; align-items: center;">
-                📋 Thông tin đơn hàng
-            </h3>
-            <table style="width: 100%; font-size: 14px; color: #666; border-collapse: collapse;">
-                <tr>
-                    <td style="font-weight: 600; padding: 8px 0; width: 40%; color: #333;">Mã đơn hàng:</td>
-                    <td style="padding: 8px 0; color: #4a90e2; font-weight: 500;">{{orderId}}</td>
-                </tr>
-                <tr>
-                    <td style="font-weight: 600; padding: 8px 0; color: #333;">Ngày đặt hàng:</td>
-                    <td style="padding: 8px 0;">{{orderDate}}</td>
-                </tr>
-                <tr>
-                    <td style="font-weight: 600; padding: 8px 0; color: #333;">Phương thức thanh toán:</td>
-                    <td style="padding: 8px 0;">{{paymentMethod}}</td>
-                </tr>
-                <tr>
-                    <td style="font-weight: 600; padding: 8px 0; color: #333;">Trạng thái:</td>
-                    <td style="padding: 8px 0; color: #28a745; font-weight: 500;">{{status}}</td>
-                </tr>
-            </table>
-        </div>
+                            <p>Please use the OTP code below to activate your account:</p>
 
-        <!-- Products -->
-        <div style="margin: 30px 0;">
-            <h3 style="margin: 0 0 15px; color: #333; font-size: 18px; display: flex; align-items: center;">
-                🛒 Sản phẩm đã đặt
-            </h3>
-            <div style="background-color: #fafafa; border-radius: 6px; padding: 15px;">
-                {{productList}}
-            </div>
-        </div>
+                            <!-- OTP BOX -->
+                            <div style="margin:30px 0; text-align:center;">
+                                <span style="
+                                    display:inline-block;
+                                    background:#f3ede8;
+                                    color:#6f4e37;
+                                    font-size:32px;
+                                    letter-spacing:6px;
+                                    padding:15px 30px;
+                                    border-radius:6px;
+                                    font-weight:bold;">
+                                    {{OTP_CODE}}
+                                </span>
+                            </div>
 
-        <!-- Total -->
-        <div style="background-color: #f0f7ff; border: 1px solid #d1e7ff; border-radius: 8px; padding: 20px; margin: 25px 0;">
-            <table style="width: 100%; font-size: 14px; color: #666; border-collapse: collapse;">
-                <tr>
-                    <td style="padding: 5px 0;">Tạm tính:</td>
-                    <td style="text-align: right; padding: 5px 0;">{{subtotal}}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 5px 0;">Phí vận chuyển:</td>
-                    <td style="text-align: right; padding: 5px 0;">{{shippingFee}}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 5px 0;">Giảm giá:</td>
-                    <td style="text-align: right; padding: 5px 0; color: #e74c3c;">{{discount}}</td>
-                </tr>
-                <tr style="border-top: 2px solid #4a90e2;">
-                    <td style="padding: 15px 0 5px; font-weight: bold; font-size: 16px; color: #4a90e2;">Tổng cần thanh toán:</td>
-                    <td style="text-align: right; padding: 15px 0 5px; font-weight: bold; font-size: 18px; color: #4a90e2;">{{totalAmount}}</td>
-                </tr>
-            </table>
-        </div>
+                            <p style="text-align:center; color:#666;">
+                                ⏰ This OTP will expire in <strong>{{EXPIRE_MINUTES}} minutes</strong>.
+                            </p>
 
-        <!-- Shipping Info -->
-        <div style="background-color: #fff8f0; border-left: 4px solid #ff9800; border-radius: 6px; padding: 20px; margin: 25px 0;">
-            <h4 style="margin: 0 0 15px; color: #d2691e; font-size: 16px; display: flex; align-items: center;">
-                🚚 Thông tin giao hàng
-            </h4>
-            <div style="font-size: 14px; line-height: 1.6;">
-                <p style="margin: 8px 0;"><span style="font-weight: 600; color: #333; display: inline-block; width: 140px;">Địa chỉ:</span> {{shippingAddress}}</p>
-                <p style="margin: 8px 0;"><span style="font-weight: 600; color: #333; display: inline-block; width: 140px;">Số điện thoại:</span> {{phoneNumber}}</p>
-                <p style="margin: 8px 0;"><span style="font-weight: 600; color: #333; display: inline-block; width: 140px;">Thời gian dự kiến:</span> {{estimatedDelivery}}</p>
-                <p style="margin: 8px 0;"><span style="font-weight: 600; color: #333; display: inline-block; width: 140px;">Đơn vị vận chuyển:</span> {{shippingProvider}}</p>
-            </div>
-        </div>
+                            <p style="color:#888; font-size:14px;">
+                                If you did not create this account, please ignore this email.
+                                For security reasons, do not share your OTP with anyone.
+                            </p>
 
-        <!-- CTA Button -->
-        <div style="text-align: center; margin: 30px 0;">
-            <a href="{{trackOrderLink}}" style="color: white; font-weight: 600; background-color: #28a745; padding: 12px 40px; border-radius: 25px; text-decoration: none; display: inline-block; transition: background-color 0.3s ease; box-shadow: 0 3px 6px rgba(40, 167, 69, 0.3);">
-                Theo dõi đơn hàng
-            </a>
-        </div>
+                            <p style="margin-top:30px;">
+                                Best regards,<br />
+                                <strong>Coffee E-Commerce Team</strong>
+                            </p>
+                        </td>
+                    </tr>
 
-        <!-- Support Info -->
-        <div style="background-color: #f8f9fa; border-radius: 6px; padding: 20px; margin: 25px 0;">
-            <p style="font-size: 14px; color: #666; margin: 0 0 10px; font-weight: 600;">Cần hỗ trợ? Liên hệ với chúng tôi:</p>
-            <div style="font-size: 14px; color: #666; line-height: 1.6;">
-                <p style="margin: 5px 0;">📞 Hotline: <strong>1900 1234</strong></p>
-                <p style="margin: 5px 0;">✉️ Email: <strong>support@shop.com</strong></p>
-                <p style="margin: 5px 0;">💬 Chat trực tuyến trên website</p>
-            </div>
-        </div>
+                    <!-- FOOTER -->
+                    <tr>
+                        <td style="background:#fafafa; padding:15px; text-align:center; font-size:12px; color:#999;">
+                            © {{YEAR}} Coffee E-Commerce. All rights reserved.
+                        </td>
+                    </tr>
 
-        <!-- Footer -->
-        <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
-            <p style="font-size: 12px; color: #999; margin: 0; line-height: 1.4;">
-                Email này được gửi tự động, vui lòng không trả lời email này.<br>
-                © 2025 Tên Shop. Tất cả quyền được bảo lưu.
-            </p>
-        </div>
-    </div>
-</div>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

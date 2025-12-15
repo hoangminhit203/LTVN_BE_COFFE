@@ -16,7 +16,7 @@ namespace LVTN_BE_COFFE.Domain.Services
         }
 
         // ✅ Create
-        public async Task<ActionResult<CategoryResponse>?> CreateCategory(CategoryCreateVModel request)
+        public async Task<ActionResult<ResponseResult>?> CreateCategory(CategoryCreateVModel request)
         {
             var category = new Category
             {
@@ -27,52 +27,52 @@ namespace LVTN_BE_COFFE.Domain.Services
             _context.Categories.Add(category);
             await _context.SaveChangesAsync();
 
-            return MapToResponse(category);
+            return new SuccessResponseResult(MapToResponse(category), "Category created successfully");
         }
 
         // ✅ Update
-        public async Task<ActionResult<CategoryResponse>?> UpdateCategory(CategoryUpdateVModel request, int id)
+        public async Task<ActionResult<ResponseResult>?> UpdateCategory(CategoryUpdateVModel request, int id)
         {
             var category = await _context.Categories.FindAsync(id);
             if (category == null)
-                return NotFound("Category not found");
+                return new ErrorResponseResult("Category not found");
 
             category.Name = request.Name;
             category.Description = request.Description;
 
             await _context.SaveChangesAsync();
 
-            return MapToResponse(category);
+            return new SuccessResponseResult(MapToResponse(category), "Category updated successfully");
         }
 
         // ✅ Delete
-        public async Task<ActionResult<bool>> DeleteCategory(int id)
+        public async Task<ActionResult<ResponseResult>> DeleteCategory(int id)
         {
             var category = await _context.Categories.FindAsync(id);
             if (category == null)
-                return NotFound("Category not found");
+                return new ErrorResponseResult("Category not found");
 
             _context.Categories.Remove(category);
             await _context.SaveChangesAsync();
-            return true;
+            return new SuccessResponseResult(true, "Category deleted successfully");
         }
 
         // ✅ Get by ID
-        public async Task<ActionResult<CategoryResponse>?> GetCategory(int id)
+        public async Task<ActionResult<ResponseResult>?> GetCategory(int id)
         {
             var category = await _context.Categories
                 .Include(c => c.Products) // thay ProductCategories -> Products
                 .FirstOrDefaultAsync(c => c.Id == id);
 
             if (category == null)
-                return NotFound("Category not found");
+                return new ErrorResponseResult("Category not found");
 
-            return MapToResponse(category);
+            return new SuccessResponseResult(MapToResponse(category), "Category retrieved successfully");
         }
 
 
         // ✅ Get all with pagination + filter
-        public async Task<ActionResult<PaginationModel<CategoryResponse>>> GetAllCategories(CategoryFilterVModel filter)
+        public async Task<ActionResult<ResponseResult>> GetAllCategories(CategoryFilterVModel filter)
         {
             var query = _context.Categories.AsQueryable();
 
@@ -80,6 +80,7 @@ namespace LVTN_BE_COFFE.Domain.Services
                 query = query.Where(x => x.Name.Contains(filter.Name));
 
             var totalCount = await query.CountAsync();
+            var totalPages = (int)Math.Ceiling((double)totalCount / filter.PageSize);
 
             var items = await query
                 .Include(c => c.Products) // thay ProductCategories -> Products
@@ -87,11 +88,16 @@ namespace LVTN_BE_COFFE.Domain.Services
                 .Take(filter.PageSize)
                 .ToListAsync();
 
-            return new PaginationModel<CategoryResponse>
+            var paginationResponse = new
             {
                 TotalRecords = totalCount,
+                TotalPages = totalPages,
+                CurrentPage = filter.PageNumber,
+                PageSize = filter.PageSize,
                 Records = items.Select(MapToResponse).ToList()
             };
+
+            return new SuccessResponseResult(paginationResponse, "Categories retrieved successfully");
         }
 
 
@@ -114,6 +120,5 @@ namespace LVTN_BE_COFFE.Domain.Services
                 //}).ToList()
             };
         }
-
     }
 }
