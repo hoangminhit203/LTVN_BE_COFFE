@@ -19,59 +19,73 @@ namespace LVTN_BE_COFFE.Controllers
 
         // GET: api/Product
         [HttpGet]
-        public async Task<ActionResult<PaginationModel<ProductResponse>>> GetAll([FromQuery] ProductFilterVModel filter)
+        public async Task<ActionResult<ResponseResult>> GetAll([FromQuery] ProductFilterVModel filter)
         {
             return await _productService.GetAllProducts(filter);
         }
 
         // GET: api/Product/{id}
         [HttpGet("{id}")]
-        public async Task<ActionResult<ProductResponse>?> GetById(int id)
+        public async Task<ActionResult<ResponseResult>?> GetById(int id)
         {
-            var product = await _productService.GetProduct(id);
-            if (product?.Value == null)
-                return NotFound("Product not found.");
-            return product;
+            return await _productService.GetProduct(id);
         }
 
         //// ✅ GET: api/Product/find-by-name?name=Capuchino
         //[HttpGet("find-by-name")]
-        //public async Task<ActionResult<ProductResponse>?> FindByName([FromQuery] string name)
+        //public async Task<ActionResult<ResponseResult>?> FindByName([FromQuery] string name)
         //{
         //    var product = await _productService.FindByName(name);
-        //    if (product?.Value == null)
-        //        return NotFound("Product not found.");
         //    return product;
         //}
 
         // POST: api/Product
         [HttpPost]
-        public async Task<ActionResult<ProductResponse>?> Create([FromBody] ProductCreateVModel request)
+        public async Task<ActionResult<ResponseResult>?> Create([FromBody] ProductCreateVModel request)
         {
-            var created = await _productService.CreateProduct(request);
-            if (created?.Value == null)
-                return BadRequest("Create failed.");
-            return CreatedAtAction(nameof(GetById), new { id = created.Value.ProductId }, created);
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new ErrorResponseResult("Dữ liệu không hợp lệ"));
+            }
+
+            var result = await _productService.CreateProduct(request);
+
+            // Nếu tạo thành công, trả về status 201 Created
+            if (result?.Value != null && result.Value.IsSuccess)
+            {
+                // Extract ProductId from the response data for CreatedAtAction
+                try
+                {
+                    var productData = (dynamic)result.Value.Data;
+                    return CreatedAtAction(nameof(GetById), new { id = productData.ProductId }, result.Value);
+                }
+                catch
+                {
+                    // Fallback nếu không extract được ProductId
+                    return StatusCode(201, result.Value);
+                }
+            }
+
+            return result;
         }
 
         // PUT: api/Product/{id}
         [HttpPut("{id}")]
-        public async Task<ActionResult<ProductResponse>?> Update([FromBody] ProductUpdateVModel request, int id)
+        public async Task<ActionResult<ResponseResult>?> Update([FromBody] ProductUpdateVModel request, int id)
         {
-            var updated = await _productService.UpdateProduct(request, id);
-            if (updated?.Value == null)
-                return NotFound("Product not found.");
-            return Ok(updated);
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new ErrorResponseResult("Dữ liệu không hợp lệ"));
+            }
+
+            return await _productService.UpdateProduct(request, id);
         }
 
         // DELETE: api/Product/{id}
         [HttpDelete("{id}")]
-        public async Task<ActionResult<bool>> Delete(int id)
+        public async Task<ActionResult<ResponseResult>> Delete(int id)
         {
-            var result = await _productService.DeleteProduct(id);
-            if (result?.Value == false)
-                return NotFound("Product not found.");
-            return Ok(true);
+            return await _productService.DeleteProduct(id);
         }
     }
 }
