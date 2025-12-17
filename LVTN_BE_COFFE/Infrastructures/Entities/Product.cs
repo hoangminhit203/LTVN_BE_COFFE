@@ -1,10 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using LVTN_BE_COFFE.Infrastructures.Entities;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 [Index(nameof(Name), IsUnique = false)]
-public class Product
+public class Product : BaseEntity
 {
     [Key]
     public int Id { get; set; }

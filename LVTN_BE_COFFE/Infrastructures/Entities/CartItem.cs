@@ -3,7 +3,7 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-public class CartItem
+public class CartItem : BaseEntity
 {
     [Key]
     public int Id { get; set; }

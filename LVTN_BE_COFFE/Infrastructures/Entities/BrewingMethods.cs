@@ -1,7 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using LVTN_BE_COFFE.Infrastructures.Entities;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
-public class BrewingMethod
+public class BrewingMethod : BaseEntity
 {
     [Key]
     public int Id { get; set; }

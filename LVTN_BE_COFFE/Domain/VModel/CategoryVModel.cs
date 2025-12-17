@@ -24,12 +24,12 @@ namespace LVTN_BE_COFFE.Domain.VModel
     // Kết quả trả về cho client
     public class CategoryResponse
     {
-        public int CategoryId { get; set; }
+        public long CategoryId { get; set; }
         public string Name { get; set; }
         public string? Description { get; set; }
-
-        // Nếu bạn muốn hiển thị sản phẩm trong category:
-        //public List<ProductResponse>? Products { get; set; }
+        public bool? IsActive { get; set; } // Add IsActive property
+        public DateTime? CreatedDate { get; set; } // Add audit fields if needed
+        public DateTime? UpdatedDate { get; set; }
     }
 
     // Bộ lọc khi lấy danh sách category

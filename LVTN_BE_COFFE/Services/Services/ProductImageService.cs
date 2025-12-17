@@ -2,36 +2,42 @@
 using LVTN_BE_COFFE.Domain.Model;
 using LVTN_BE_COFFE.Domain.VModel;
 using LVTN_BE_COFFE.Infrastructures.Entities;
-using LVTN_BE_COFFE.Services.Services;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
-namespace LVTN_BE_COFFE.Services
+namespace LVTN_BE_COFFE.Services.Services
 {
     public class ProductImageService : IProductImageService
     {
         private readonly AppDbContext _context;
         private readonly CloudinaryService _cloudinaryService;
 
-        public ProductImageService(AppDbContext context, CloudinaryService cloudinaryService)
+        public ProductImageService(
+            AppDbContext context,
+            CloudinaryService cloudinaryService)
         {
             _context = context;
             _cloudinaryService = cloudinaryService;
         }
 
+        #region Add single image
         public async Task<ProductImageResponse> AddAsync(ProductImageCreateVModel model)
         {
-            string imageUrl = model.ImageUrl ?? string.Empty;
-            string? publicId = model.PublicId;
+            string imageUrl;
+            string? publicId;
 
             if (model.File != null)
             {
-                var uploadResult = await _cloudinaryService.UploadImageAsync(model.File);
-                imageUrl = uploadResult.Url;
-                publicId = uploadResult.PublicId;
+                var upload = await _cloudinaryService.UploadImageAsync(model.File);
+                imageUrl = upload.Url;
+                publicId = upload.PublicId;
             }
-            else if (string.IsNullOrEmpty(imageUrl))
+            else if (!string.IsNullOrEmpty(model.ImageUrl))
+            {
+                imageUrl = model.ImageUrl;
+                publicId = model.PublicId;
+            }
+            else
             {
                 throw new InvalidOperationException("Phải cung cấp File hoặc ImageUrl.");
             }
@@ -48,50 +54,82 @@ namespace LVTN_BE_COFFE.Services
             };
 
             _context.ProductImage.Add(entity);
+
+            await HandleMainImageAsync(entity);
+
             await _context.SaveChangesAsync();
 
             return MapToResponse(entity);
         }
+        #endregion
 
+        #region Add multiple images
+        public async Task<List<ProductImageResponse>> AddMultipleAsync(ProductImageMultiCreateVModel model)
+        {
+            var responses = new List<ProductImageResponse>();
+
+            foreach (var file in model.Files)
+            {
+                var upload = await _cloudinaryService.UploadImageAsync(file);
+
+                var entity = new ProductImage
+                {
+                    ProductId = model.ProductId,
+                    ProductVariantId = model.ProductVariantId,
+                    ImageUrl = upload.Url,
+                    PublicId = upload.PublicId,
+                    IsMain = false,
+                    UploadedAt = DateTime.UtcNow
+                };
+
+                _context.ProductImage.Add(entity);
+                responses.Add(MapToResponse(entity));
+            }
+
+            await _context.SaveChangesAsync();
+            return responses;
+        }
+        #endregion
+
+        #region Update image
         public async Task<ProductImageResponse> UpdateAsync(ProductImageUpdateVModel model)
         {
-            var entity = await _context.ProductImage.FindAsync(model.Id);
+            var entity = await _context.ProductImage.FirstOrDefaultAsync(x => x.Id == model.Id);
             if (entity == null)
                 throw new KeyNotFoundException("Không tìm thấy hình ảnh.");
-
-            string newUrl = entity.ImageUrl;
-            string? newPublicId = entity.PublicId;
 
             if (model.File != null)
             {
                 if (!string.IsNullOrEmpty(entity.PublicId))
                     await _cloudinaryService.DeleteImageAsync(entity.PublicId);
 
-                var uploadResult = await _cloudinaryService.UploadImageAsync(model.File);
-                newUrl = uploadResult.Url;
-                newPublicId = uploadResult.PublicId;
+                var upload = await _cloudinaryService.UploadImageAsync(model.File);
+                entity.ImageUrl = upload.Url;
+                entity.PublicId = upload.PublicId;
             }
-            else if (model.ImageUrl != null)
+            else if (!string.IsNullOrEmpty(model.ImageUrl))
             {
-                newUrl = model.ImageUrl;
-                newPublicId = model.PublicId;
+                entity.ImageUrl = model.ImageUrl;
+                entity.PublicId = model.PublicId;
             }
 
-            entity.ImageUrl = newUrl;
-            entity.PublicId = newPublicId;
             entity.IsMain = model.IsMain;
             entity.SortOrder = model.SortOrder;
             entity.ProductId = model.ProductId;
             entity.ProductVariantId = model.ProductVariantId;
             entity.UpdatedAt = DateTime.UtcNow;
 
+            await HandleMainImageAsync(entity);
+
             await _context.SaveChangesAsync();
             return MapToResponse(entity);
         }
+        #endregion
 
+        #region Delete image
         public async Task<bool> DeleteAsync(int id)
         {
-            var entity = await _context.ProductImage.FindAsync(id);
+            var entity = await _context.ProductImage.FirstOrDefaultAsync(x => x.Id == id);
             if (entity == null) return false;
 
             if (!string.IsNullOrEmpty(entity.PublicId))
@@ -101,7 +139,9 @@ namespace LVTN_BE_COFFE.Services
             await _context.SaveChangesAsync();
             return true;
         }
+        #endregion
 
+        #region Get
         public async Task<ProductImageResponse?> GetByIdAsync(int id)
         {
             var entity = await _context.ProductImage.FindAsync(id);
@@ -112,6 +152,7 @@ namespace LVTN_BE_COFFE.Services
         {
             return await _context.ProductImage
                 .Where(x => x.ProductId == productId)
+                .OrderBy(x => x.SortOrder)
                 .Select(MapToResponseExpression)
                 .ToListAsync();
         }
@@ -123,27 +164,28 @@ namespace LVTN_BE_COFFE.Services
                 .Select(MapToResponseExpression)
                 .ToListAsync();
         }
+        #endregion
 
-        public async Task<PaginationModel<ProductImageResponse>> GetAllAsync(ProductImageFilterVModel filterVModel)
+        #region Pagination + Filter
+        public async Task<PaginationModel<ProductImageResponse>> GetAllAsync(ProductImageFilterVModel filter)
         {
             var query = _context.ProductImage.AsQueryable();
 
-            if (filterVModel.ProductId.HasValue)
-                query = query.Where(i => i.ProductId == filterVModel.ProductId);
-            if (filterVModel.ProductVariantId.HasValue)
-                query = query.Where(i => i.ProductVariantId == filterVModel.ProductVariantId);
-            if (filterVModel.IsMain.HasValue)
-                query = query.Where(i => i.IsMain == filterVModel.IsMain);
-            if (filterVModel.UploadedFrom.HasValue)
-                query = query.Where(i => i.UploadedAt >= filterVModel.UploadedFrom);
-            if (filterVModel.UploadedTo.HasValue)
-                query = query.Where(i => i.UploadedAt <= filterVModel.UploadedTo);
+            if (filter.ProductId.HasValue)
+                query = query.Where(x => x.ProductId == filter.ProductId);
+
+            if (filter.ProductVariantId.HasValue)
+                query = query.Where(x => x.ProductVariantId == filter.ProductVariantId);
+
+            if (filter.IsMain.HasValue)
+                query = query.Where(x => x.IsMain == filter.IsMain);
 
             var totalRecords = await query.CountAsync();
+
             var records = await query
-                .OrderByDescending(i => i.UploadedAt)
-                .Skip((filterVModel.PageNumber - 1) * filterVModel.PageSize)
-                .Take(filterVModel.PageSize)
+                .OrderByDescending(x => x.UploadedAt)
+                .Skip((filter.PageNumber - 1) * filter.PageSize)
+                .Take(filter.PageSize)
                 .Select(MapToResponseExpression)
                 .ToListAsync();
 
@@ -153,10 +195,26 @@ namespace LVTN_BE_COFFE.Services
                 Records = records
             };
         }
+        #endregion
+
+        #region Private helpers
+        private async Task HandleMainImageAsync(ProductImage entity)
+        {
+            if (!entity.IsMain) return;
+
+            await _context.ProductImage
+                .Where(x => x.ProductId == entity.ProductId && x.Id != entity.Id)
+                .ExecuteUpdateAsync(x =>
+                    x.SetProperty(p => p.IsMain, false));
+        }
+        #endregion
+
+        #region Mapping
         private static ProductImageResponse MapToResponse(ProductImage entity)
         {
             return new ProductImageResponse
             {
+                Id = entity.Id,
                 ImageUrl = entity.ImageUrl,
                 ProductId = entity.ProductId,
                 ProductVariantId = entity.ProductVariantId,
@@ -170,6 +228,7 @@ namespace LVTN_BE_COFFE.Services
         private static Expression<Func<ProductImage, ProductImageResponse>> MapToResponseExpression =>
             x => new ProductImageResponse
             {
+                Id = x.Id,
                 ImageUrl = x.ImageUrl,
                 ProductId = x.ProductId,
                 ProductVariantId = x.ProductVariantId,
@@ -178,5 +237,6 @@ namespace LVTN_BE_COFFE.Services
                 UploadedAt = x.UploadedAt,
                 UpdatedAt = x.UpdatedAt
             };
+        #endregion
     }
 }

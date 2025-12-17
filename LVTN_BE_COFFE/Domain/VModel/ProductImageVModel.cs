@@ -25,16 +25,20 @@ namespace LVTN_BE_COFFE.Domain.VModel
 
     public class ProductImageResponse
     {
-        //public int Id { get; set; }
-        public string ImageUrl { get; set; } = string.Empty;
-        //public string? PublicId { get; set; }
+        public int Id { get; set; }
+
         public int? ProductId { get; set; }
         public int? ProductVariantId { get; set; }
+
+        public string ImageUrl { get; set; } = string.Empty;
+
         public bool IsMain { get; set; }
         public int SortOrder { get; set; }
+
         public DateTime UploadedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
     }
+
     public class ProductImageFilterVModel
     {
         public int? ProductId { get; set; }
@@ -48,5 +52,11 @@ namespace LVTN_BE_COFFE.Domain.VModel
         public int PageNumber { get; set; } = Numbers.Pagination.DefaultPageNumber;
         public int PageSize { get; set; } = Numbers.Pagination.DefaultPageSize;
 
+    }
+    public class ProductImageMultiCreateVModel
+    {
+        public int ProductId { get; set; }
+        public int? ProductVariantId { get; set; }
+        public List<IFormFile> Files { get; set; }
     }
 }

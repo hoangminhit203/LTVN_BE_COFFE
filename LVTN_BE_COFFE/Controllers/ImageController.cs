@@ -6,8 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace LVTN_BE_COFFE.Controllers
 {
-
-    [Controller]
+    [ApiController]
     [Route("api/[controller]")]
     public class ImageController : ControllerBase
     {

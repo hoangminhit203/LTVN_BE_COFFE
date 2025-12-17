@@ -1,7 +1,8 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using LVTN_BE_COFFE.Infrastructures.Entities;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-public class ProductBrewingMethod
+public class ProductBrewingMethod : BaseEntity
 {
     [Required]
     public int ProductId { get; set; }

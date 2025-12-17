@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 
-public class Cart
+public class Cart : BaseEntity
 {
     [Key]
     public int Id { get; set; }

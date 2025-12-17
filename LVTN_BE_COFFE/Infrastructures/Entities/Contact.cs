@@ -1,7 +1,8 @@
-﻿using System;
+﻿using LVTN_BE_COFFE.Infrastructures.Entities;
+using System;
 using System.ComponentModel.DataAnnotations;
 
-public class Contact
+public class Contact : BaseEntity
 {
     [Key]
     public int Id { get; set; }

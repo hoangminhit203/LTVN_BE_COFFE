@@ -2,7 +2,7 @@
 
 namespace LVTN_BE_COFFE.Infrastructures.Entities
 {
-    public class Branch
+    public class Branch : BaseEntity
     {
         [Key]
         public int BranchId { get; set; }

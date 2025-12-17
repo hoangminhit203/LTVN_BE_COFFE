@@ -1,7 +1,8 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using LVTN_BE_COFFE.Infrastructures.Entities;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-public class OrderItem
+public class OrderItem : BaseEntity
 {
     [Key]
     public int Id { get; set; }

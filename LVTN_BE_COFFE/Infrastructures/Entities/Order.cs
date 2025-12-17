@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 
-public class Order
+public class Order : BaseEntity
 {
     [Key]
     public int OrderId { get; set; }
