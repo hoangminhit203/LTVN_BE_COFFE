@@ -138,7 +138,7 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 var app = builder.Build();
-
+app.UseCors("AllowAll");
 // Configure the HTTP request pipeline.
 app.UseSwagger();
 app.UseSwaggerUI();

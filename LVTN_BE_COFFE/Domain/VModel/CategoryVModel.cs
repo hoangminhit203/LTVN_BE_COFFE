@@ -12,6 +12,7 @@ namespace LVTN_BE_COFFE.Domain.VModel
         public string Name { get; set; }
 
         public string? Description { get; set; }
+        public bool? IsActive { get; set; }
     }
 
     // Cập nhật category

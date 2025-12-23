@@ -22,7 +22,7 @@ namespace LVTN_BE_COFFE.Domain.Services
             {
                 Name = request.Name,
                 Description = request.Description,
-                IsActive = true, // Set IsActive when creating
+                IsActive = request.IsActive, // Set IsActive when creating
                 CreatedDate = DateTime.UtcNow
             };
 
@@ -41,6 +41,7 @@ namespace LVTN_BE_COFFE.Domain.Services
 
             category.Name = request.Name;
             category.Description = request.Description;
+            category.IsActive = true;
             category.UpdatedDate = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
@@ -79,7 +80,8 @@ namespace LVTN_BE_COFFE.Domain.Services
         // ✅ Get all with pagination + filter (only active)
         public async Task<ActionResult<ResponseResult>> GetAllCategories(CategoryFilterVModel filter)
         {
-            var query = _context.Categories.Where(c => c.IsActive == true); // Only active categories
+            // Sửa: Lấy tất cả, không lọc IsActive nữa
+            var query = _context.Categories.AsQueryable();
 
             if (!string.IsNullOrEmpty(filter.Name))
                 query = query.Where(x => x.Name.Contains(filter.Name));
