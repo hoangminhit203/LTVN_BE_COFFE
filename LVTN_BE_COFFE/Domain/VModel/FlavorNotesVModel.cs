@@ -1,41 +1,33 @@
 ﻿using LVTN_BE_COFFE.Domain.Common;
-using LVTN_BE_COFFE.Domain.Model;
 using System.ComponentModel.DataAnnotations;
 
 namespace LVTN_BE_COFFE.Domain.VModel
 {
-    // Tạo mới category
-    public class CategoryCreateVModel
+    public class FlavorNoteCreateVModel
     {
         [Required]
         [StringLength(100)]
         public string Name { get; set; }
         [Required]
-        [StringLength(500)]
-        public string? Description { get; set; }
         public bool? IsActive { get; set; }
     }
-
     // Cập nhật category
-    public class CategoryUpdateVModel : CategoryCreateVModel
+    public class FlavorNoteUpdateVModel : FlavorNoteCreateVModel
     {
         [Required]
-        public int CategoryId { get; set; }
+        public int FlavorNoteId { get; set; }
     }
 
     // Kết quả trả về cho client
-    public class CategoryResponse
+    public class FlavorNoteResponse
     {
-        public long CategoryId { get; set; }
+        public long FlavorNoteId { get; set; }
         public string Name { get; set; }
-        public string? Description { get; set; }
         public bool? IsActive { get; set; } // Add IsActive property
         public DateTime? CreatedDate { get; set; } // Add audit fields if needed
         public DateTime? UpdatedDate { get; set; }
     }
-
-    // Bộ lọc khi lấy danh sách category
-    public class CategoryFilterVModel
+    public class FlavorNoteFilterVModel
     {
         public string? Name { get; set; }
         public int PageNumber { get; set; } = Numbers.Pagination.DefaultPageNumber;

@@ -62,6 +62,7 @@ builder.Services.AddScoped<IProductImageService, ProductImageService>();
 builder.Services.AddScoped<IWishlistService, WishlistService>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services.AddScoped<IVnPayService, VnPayService>();
+builder.Services.AddScoped<IFlavorNotesService, FlavorNoteService>();
 //Product
 builder.Services.AddScoped<IProductService, ProductService>();
 // Add Session

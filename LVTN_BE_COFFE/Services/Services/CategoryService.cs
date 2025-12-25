@@ -80,8 +80,8 @@ namespace LVTN_BE_COFFE.Domain.Services
         // ✅ Get all with pagination + filter (only active)
         public async Task<ActionResult<ResponseResult>> GetAllCategories(CategoryFilterVModel filter)
         {
-            // Sửa: Lấy tất cả, không lọc IsActive nữa
-            var query = _context.Categories.AsQueryable();
+            // Filter only active categories
+            var query = _context.Categories.Where(c => c.IsActive == true);
 
             if (!string.IsNullOrEmpty(filter.Name))
                 query = query.Where(x => x.Name.Contains(filter.Name));
