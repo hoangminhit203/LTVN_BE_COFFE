@@ -41,32 +41,38 @@ namespace LVTN_BE_COFFE.Services.Services
                 product.Categories.Add(category);
 
 
-                //Add Flavor Notes
-                if (request.FlavorNotes != null && request.FlavorNotes.Any())
+                //Add Flavor Notes - Sử dụng FlavorNoteIds thay vì FlavorNotes
+                if (request.FlavorNoteIds != null && request.FlavorNoteIds.Any())
                 {
-                    // 1. Lấy ID của các FlavorNote dựa trên tên
-                    var flavorNoteIds = await _context.FlavorNotes
-                        .Where(fn => request.FlavorNotes.Contains(fn.Name)) // Giả sử FlavorNote Entity có Name
+                    // Kiểm tra các FlavorNote có tồn tại không
+                    var existingFlavorNoteIds = await _context.FlavorNotes
+                        .Where(fn => request.FlavorNoteIds.Contains(fn.Id))
                         .Select(fn => fn.Id)
                         .ToListAsync();
 
-                    // 2. Tạo Entity trung gian ProductFlavorNote bằng cách gán FlavorNoteId
-                    product.ProductFlavorNotes = flavorNoteIds
+                    if (existingFlavorNoteIds.Count != request.FlavorNoteIds.Count)
+                        return new ErrorResponseResult("Một số FlavorNote không tồn tại");
+
+                    // Tạo Entity trung gian ProductFlavorNote
+                    product.ProductFlavorNotes = existingFlavorNoteIds
                         .Select(id => new ProductFlavorNote { FlavorNoteId = id })
                         .ToList();
                 }
 
-                //Add Brewing Methods
-                if (request.BrewingMethods != null && request.BrewingMethods.Any())
+                //Add Brewing Methods - Sử dụng BrewingMethodIds thay vì BrewingMethods
+                if (request.BrewingMethodIds != null && request.BrewingMethodIds.Any())
                 {
-                    // 1. Lấy ID của các BrewingMethod dựa trên tên
-                    var brewingMethodIds = await _context.BrewingMethods
-                        .Where(bm => request.BrewingMethods.Contains(bm.Name)) // Giả sử BrewingMethod Entity có Name
+                    // Kiểm tra các BrewingMethod có tồn tại không
+                    var existingBrewingMethodIds = await _context.BrewingMethods
+                        .Where(bm => request.BrewingMethodIds.Contains(bm.Id))
                         .Select(bm => bm.Id)
                         .ToListAsync();
 
-                    // 2. Tạo Entity trung gian ProductBrewingMethod bằng cách gán BrewingMethodId
-                    product.ProductBrewingMethods = brewingMethodIds
+                    if (existingBrewingMethodIds.Count != request.BrewingMethodIds.Count)
+                        return new ErrorResponseResult("Một số BrewingMethod không tồn tại");
+
+                    // Tạo Entity trung gian ProductBrewingMethod
+                    product.ProductBrewingMethods = existingBrewingMethodIds
                         .Select(id => new ProductBrewingMethod { BrewingMethodId = id })
                         .ToList();
                 }
@@ -95,6 +101,14 @@ namespace LVTN_BE_COFFE.Services.Services
 
                 _context.Products.Add(product);
                 await _context.SaveChangesAsync();
+
+                // Reload product với đầy đủ thông tin để map
+                product = await _context.Products
+                    .Include(x => x.Categories)
+                    .Include(x => x.Variants).ThenInclude(v => v.Images)
+                    .Include(x => x.ProductFlavorNotes).ThenInclude(fn => fn.FlavorNote)
+                    .Include(x => x.ProductBrewingMethods).ThenInclude(bm => bm.BrewingMethod)
+                    .FirstOrDefaultAsync(x => x.Id == product.Id);
 
                 return new SuccessResponseResult(MapToResponse(product), "Tạo sản phẩm thành công");
             }
@@ -131,34 +145,40 @@ namespace LVTN_BE_COFFE.Services.Services
                 if (category != null)
                     product.Categories.Add(category);
 
-                // 🔹 Update Flavor Notes
-                product.ProductFlavorNotes.Clear(); // Luôn xóa các mối quan hệ cũ trước
-                if (request.FlavorNotes != null && request.FlavorNotes.Any())
+                // 🔹 Update Flavor Notes - Sử dụng FlavorNoteIds thay vì FlavorNotes
+                product.ProductFlavorNotes.Clear();
+                if (request.FlavorNoteIds != null && request.FlavorNoteIds.Any())
                 {
-                    // 1. Tra cứu các ID của FlavorNote dựa trên tên (Name)
-                    var flavorNoteIds = await _context.FlavorNotes
-                        .Where(fn => request.FlavorNotes.Contains(fn.Name)) // Giả sử FlavorNote có thuộc tính Name
+                    // Kiểm tra các FlavorNote có tồn tại không
+                    var existingFlavorNoteIds = await _context.FlavorNotes
+                        .Where(fn => request.FlavorNoteIds.Contains(fn.Id))
                         .Select(fn => fn.Id)
                         .ToListAsync();
 
-                    // 2. Tạo Entity trung gian ProductFlavorNote bằng cách gán FlavorNoteId
-                    product.ProductFlavorNotes = flavorNoteIds
+                    if (existingFlavorNoteIds.Count != request.FlavorNoteIds.Count)
+                        return new ErrorResponseResult("Một số FlavorNote không tồn tại");
+
+                    // Tạo Entity trung gian ProductFlavorNote
+                    product.ProductFlavorNotes = existingFlavorNoteIds
                         .Select(id => new ProductFlavorNote { FlavorNoteId = id })
                         .ToList();
                 }
 
-                // 🔹 Update Brewing Methods
-                product.ProductBrewingMethods.Clear(); // Luôn xóa các mối quan hệ cũ trước
-                if (request.BrewingMethods != null && request.BrewingMethods.Any())
+                // 🔹 Update Brewing Methods - Sử dụng BrewingMethodIds thay vì BrewingMethods
+                product.ProductBrewingMethods.Clear();
+                if (request.BrewingMethodIds != null && request.BrewingMethodIds.Any())
                 {
-                    // 1. Tra cứu các ID của BrewingMethod dựa trên tên (Name)
-                    var brewingMethodIds = await _context.BrewingMethods
-                        .Where(bm => request.BrewingMethods.Contains(bm.Name)) // Giả sử BrewingMethod có thuộc tính Name
+                    // Kiểm tra các BrewingMethod có tồn tại không
+                    var existingBrewingMethodIds = await _context.BrewingMethods
+                        .Where(bm => request.BrewingMethodIds.Contains(bm.Id))
                         .Select(bm => bm.Id)
                         .ToListAsync();
 
-                    // 2. Tạo Entity trung gian ProductBrewingMethod bằng cách gán BrewingMethodId
-                    product.ProductBrewingMethods = brewingMethodIds
+                    if (existingBrewingMethodIds.Count != request.BrewingMethodIds.Count)
+                        return new ErrorResponseResult("Một số BrewingMethod không tồn tại");
+
+                    // Tạo Entity trung gian ProductBrewingMethod
+                    product.ProductBrewingMethods = existingBrewingMethodIds
                         .Select(id => new ProductBrewingMethod { BrewingMethodId = id })
                         .ToList();
                 }
@@ -188,6 +208,14 @@ namespace LVTN_BE_COFFE.Services.Services
                 }
 
                 await _context.SaveChangesAsync();
+
+                // Reload product với đầy đủ thông tin để map
+                product = await _context.Products
+                    .Include(x => x.Categories)
+                    .Include(x => x.Variants).ThenInclude(v => v.Images)
+                    .Include(x => x.ProductFlavorNotes).ThenInclude(fn => fn.FlavorNote)
+                    .Include(x => x.ProductBrewingMethods).ThenInclude(bm => bm.BrewingMethod)
+                    .FirstOrDefaultAsync(x => x.Id == id);
 
                 return new SuccessResponseResult(MapToResponse(product), "Cập nhật sản phẩm thành công");
             }
@@ -245,8 +273,8 @@ namespace LVTN_BE_COFFE.Services.Services
                 var query = _context.Products
                     .Include(x => x.Categories)
                     .Include(x => x.Variants).ThenInclude(v => v.Images)
-                    .Include(x => x.ProductFlavorNotes)
-                    .Include(x => x.ProductBrewingMethods)
+                    .Include(x => x.ProductFlavorNotes).ThenInclude(fn => fn.FlavorNote)
+                    .Include(x => x.ProductBrewingMethods).ThenInclude(bm => bm.BrewingMethod)
                     .AsQueryable();
 
                 if (!string.IsNullOrEmpty(filter.Name))
@@ -298,11 +326,26 @@ namespace LVTN_BE_COFFE.Services.Services
                 UpdatedAt = p.UpdatedAt,
 
                 FlavorNotes = p.ProductFlavorNotes
-                    .Select(x => x.FlavorNote.Name)
+                    .Select(x => new FlavorNoteResponse
+                    {
+                        FlavorNoteId = x.FlavorNoteId,
+                        Name = x.FlavorNote.Name,
+                        IsActive = x.FlavorNote.IsActive,
+                        CreatedDate = x.FlavorNote.CreatedDate,
+                        UpdatedDate = x.FlavorNote.UpdatedDate
+                    })
                     .ToList(),
 
                 BrewingMethods = p.ProductBrewingMethods
-                    .Select(x => x.BrewingMethod.Name)
+                    .Select(x => new BrewingMethodsResponse
+                    {
+                        BrewingMethodId = x.BrewingMethodId,
+                        Name = x.BrewingMethod.Name,
+                        Description = x.BrewingMethod.Description,
+                        IsActive = x.BrewingMethod.IsActive,
+                        CreatedDate = x.BrewingMethod.CreatedDate,
+                        UpdatedDate = x.BrewingMethod.UpdatedDate
+                    })
                     .ToList(),
 
                 Category = p.Categories
