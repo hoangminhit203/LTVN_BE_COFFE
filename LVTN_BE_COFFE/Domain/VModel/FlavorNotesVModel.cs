@@ -1,5 +1,6 @@
 ﻿using LVTN_BE_COFFE.Domain.Common;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace LVTN_BE_COFFE.Domain.VModel
 {
@@ -11,10 +12,10 @@ namespace LVTN_BE_COFFE.Domain.VModel
         [Required]
         public bool? IsActive { get; set; }
     }
-    // Cập nhật category
+    // Cập nhật flavor note
     public class FlavorNoteUpdateVModel : FlavorNoteCreateVModel
     {
-        [Required]
+        [JsonIgnore]
         public int FlavorNoteId { get; set; }
     }
 
