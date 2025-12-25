@@ -15,8 +15,11 @@ namespace LVTN_BE_COFFE.Domain.VModel
 
         [Required]
         public int CategoryId { get; set; }
-        public List<string>? FlavorNotes { get; set; }
-        public List<string>? BrewingMethods { get; set; }
+
+        // Đổi từ List<string> sang List<int> để nhận ID
+        public List<int>? FlavorNoteIds { get; set; }
+        public List<int>? BrewingMethodIds { get; set; }
+
         public List<ProductVariantCreateVM>? Variants { get; set; }
     }
 
@@ -33,8 +36,9 @@ namespace LVTN_BE_COFFE.Domain.VModel
 
         public int CategoryId { get; set; }
 
-        public List<string>? FlavorNotes { get; set; }
-        public List<string>? BrewingMethods { get; set; }
+        // Đổi từ List<string> sang List<int> để nhận ID
+        public List<int>? FlavorNoteIds { get; set; }
+        public List<int>? BrewingMethodIds { get; set; }
 
         public List<ProductVariantCreateVM>? Variants { get; set; }
     }
@@ -50,8 +54,9 @@ namespace LVTN_BE_COFFE.Domain.VModel
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
 
-        public List<string>? FlavorNotes { get; set; }
-        public List<string>? BrewingMethods { get; set; }
+        // Đổi từ List<string> sang List<FlavorNoteResponse> để trả về đầy đủ thông tin
+        public List<FlavorNoteResponse>? FlavorNotes { get; set; }
+        public List<BrewingMethodsResponse>? BrewingMethods { get; set; }
 
         public List<ProductVariantResponse>? Variants { get; set; }
 
