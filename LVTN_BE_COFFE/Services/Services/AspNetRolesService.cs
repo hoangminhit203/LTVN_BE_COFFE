@@ -1,6 +1,7 @@
 ﻿using LVTN_BE_COFFE.Domain.Common;
 using LVTN_BE_COFFE.Domain.IServices;
 using LVTN_BE_COFFE.Domain.Model;
+using LVTN_BE_COFFE.Domain.Ultilities;
 using LVTN_BE_COFFE.Domain.VModel;
 using LVTN_BE_COFFE.Infrastructures.Entities;
 using Microsoft.AspNetCore.Identity;
@@ -20,6 +21,7 @@ namespace LVTN_BE_COFFE.Services.Services
             _context = context;
             _roleManager = roleManager;
         }
+
         public async Task<ActionResult<PaginationModel<AspNetRolesGetVModel>>> GetAll(AspNetRolesFilterParams parameters)
         {
             IQueryable<AspNetRoles> query = _context.AspNetRoles.Where(BuildQueryable(parameters)).OrderByDescending(x => x.CreatedDate);
@@ -33,8 +35,7 @@ namespace LVTN_BE_COFFE.Services.Services
 
         public async Task<ActionResult<AspNetRolesGetVModel>?> GetById(string id)
         {
-            var entity = await _context.AspNetRoles.FindAsync(id); // need to fix this code
-            //var entity = await _roleManager.FindByIdAsync(id);
+            var entity = await _context.AspNetRoles.FindAsync(id);
             if (entity == null)
             {
                 return null;
@@ -42,31 +43,26 @@ namespace LVTN_BE_COFFE.Services.Services
             return MapEntityToVModel(entity);
         }
 
-        public async Task<ActionResult<ResponseResult>> Create(AspNetRolesCreateVModel model)
+        public async Task<ActionResult<AspNetRolesGetVModel>?> Create(AspNetRolesCreateVModel model)
         {
-            var response = new ResponseResult();
             var entity = new AspNetRoles
             {
-                CreatedDate = DateTime.Now,
-                CreatedBy = GlobalEmail,
                 Name = model.Name,
-                IsActive = model.IsActive
+                NormalizedName = model.Name.ToUpper(),
+                JsonRoleHasFunctions = model.JsonRoleHasFunctions != null ? JsonHelper.SerializeJsonRoleHasFunctions(model.JsonRoleHasFunctions) : null,
+                CreatedDate = DateTime.Now,
+                CreatedBy = GlobalUserName,
+                IsActive = model.IsActive,
             };
-            var result = await _roleManager.CreateAsync(entity);
-            if (result != null)
+
+            var identityResult = await _roleManager.CreateAsync(entity);
+            if (!identityResult.Succeeded)
             {
-                if (result.Succeeded)
-                {
-                    response.IsSuccess = true;
-                    response.Data = await GetById(entity.Id);
-                }
-                else
-                {
-                    response.IsSuccess = false;
-                    response.Message = result.Errors.First().Description; // utilities
-                }
+                var errors = string.Join("; ", identityResult.Errors.Select(e => $"{e.Code}: {e.Description}"));
+                throw new Exception("Role creation failed: " + errors);
             }
-            return response;
+
+            return MapEntityToVModel(entity);
         }
 
         public async Task<int> Update(AspNetRolesUpdateVModel model)
@@ -76,10 +72,12 @@ namespace LVTN_BE_COFFE.Services.Services
             {
                 return Numbers.FindResponse.NotFound;
             }
-            //entity.JsonRoleHasFunctions = model.JsonRoleHasFunctions;
-            entity.UpdatedDate = DateTime.Now;
-            entity.UpdatedBy = GlobalEmail;
+
             entity.Name = model.Name;
+            entity.NormalizedName = model.Name.ToUpper();
+            entity.JsonRoleHasFunctions = model.JsonRoleHasFunctions != null ? JsonHelper.SerializeJsonRoleHasFunctions(model.JsonRoleHasFunctions) : null;
+            entity.UpdatedDate = DateTime.Now;
+            entity.UpdatedBy = GlobalUserName;
             entity.IsActive = model.IsActive;
 
             _context.Entry(entity).State = EntityState.Modified;
@@ -98,24 +96,26 @@ namespace LVTN_BE_COFFE.Services.Services
 
             _context.AspNetRoles.Remove(entity);
 
-            return await _context.SaveChangesAsync(); ;
+            return await _context.SaveChangesAsync();
         }
+
         private static AspNetRolesGetVModel MapEntityToVModel(AspNetRoles entity) =>
             new AspNetRolesGetVModel
             {
                 Id = entity.Id,
-                Name = entity.Name != null ? entity.Name : string.Empty,
-                JsonRoleHasFunctions = entity.JsonRoleHasFunctions,
-                CreatedDate = entity.CreatedDate,
+                Name = entity.Name ?? string.Empty,
+                JsonRoleHasFunctions = entity.JsonRoleHasFunctions != null ? JsonHelper.DeserializeJsonRoleHasFunctions(entity.JsonRoleHasFunctions) : new List<dynamic>(),
                 CreatedBy = entity.CreatedBy,
-                UpdatedDate = entity.UpdatedDate,
+                CreatedDate = entity.CreatedDate,
                 UpdatedBy = entity.UpdatedBy,
+                UpdatedDate = entity.UpdatedDate,
                 IsActive = entity.IsActive,
-
             };
+
         private Expression<Func<AspNetRoles, bool>> BuildQueryable(AspNetRolesFilterParams fParams)
         {
             return x =>
+                (fParams.Name == null || (x.Name != null && x.Name.Contains(fParams.Name))) &&
                 (fParams.CreatedDate == null || (x.CreatedDate != null && x.CreatedDate.Value.Year.Equals(fParams.CreatedDate.Value.Year) && x.CreatedDate.Value.Month.Equals(fParams.CreatedDate.Value.Month) && x.CreatedDate.Value.Day.Equals(fParams.CreatedDate.Value.Day))) &&
                 (fParams.CreatedBy == null || (x.CreatedBy != null && x.CreatedBy.Contains(fParams.CreatedBy))) &&
                 (fParams.UpdatedDate == null || (x.UpdatedDate != null && x.UpdatedDate.Value.Year.Equals(fParams.UpdatedDate.Value.Year) && x.UpdatedDate.Value.Month.Equals(fParams.UpdatedDate.Value.Month) && x.UpdatedDate.Value.Day.Equals(fParams.UpdatedDate.Value.Day))) &&

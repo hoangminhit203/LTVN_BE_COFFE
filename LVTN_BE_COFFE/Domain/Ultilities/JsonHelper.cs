@@ -1,10 +1,12 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
+
 namespace LVTN_BE_COFFE.Domain.Ultilities
 {
     public class JsonHelper
     {
-        public static dynamic DeserializeJsonUserHasFunctions(string json)
+        // Methods cho User Functions
+        public static List<dynamic> DeserializeJsonUserHasFunctions(string json)
         {
             if (string.IsNullOrWhiteSpace(json))
             {
@@ -12,14 +14,64 @@ namespace LVTN_BE_COFFE.Domain.Ultilities
             }
             try
             {
-                return JsonSerializer.Deserialize<dynamic>(json) ?? new List<dynamic>();
+                return JsonSerializer.Deserialize<List<dynamic>>(json) ?? new List<dynamic>();
             }
             catch (JsonException)
             {
                 return new List<dynamic>();
             }
         }
+
+        public static string? SerializeJsonUserHasFunctions(List<dynamic>? data)
+        {
+            if (data == null || data.Count == 0)
+            {
+                return null;
+            }
+            try
+            {
+                return JsonSerializer.Serialize(data);
+            }
+            catch (JsonException)
+            {
+                return null;
+            }
+        }
+
+        // Methods cho Role Functions
+        public static List<dynamic> DeserializeJsonRoleHasFunctions(string json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                return new List<dynamic>();
+            }
+            try
+            {
+                return JsonSerializer.Deserialize<List<dynamic>>(json) ?? new List<dynamic>();
+            }
+            catch (JsonException)
+            {
+                return new List<dynamic>();
+            }
+        }
+
+        public static string? SerializeJsonRoleHasFunctions(List<dynamic>? data)
+        {
+            if (data == null || data.Count == 0)
+            {
+                return null;
+            }
+            try
+            {
+                return JsonSerializer.Serialize(data);
+            }
+            catch (JsonException)
+            {
+                return null;
+            }
+        }
     }
+
     public class DateOnlyJsonConverter : JsonConverter<DateOnly>
     {
         public override DateOnly Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
