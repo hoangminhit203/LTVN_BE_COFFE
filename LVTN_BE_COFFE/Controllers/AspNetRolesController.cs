@@ -2,7 +2,6 @@
 using LVTN_BE_COFFE.Domain.IServices;
 using LVTN_BE_COFFE.Domain.Model;
 using LVTN_BE_COFFE.Domain.VModel;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LVTN_BE_COFFE.Controllers
@@ -30,7 +29,7 @@ namespace LVTN_BE_COFFE.Controllers
         {
             var result = await _rolesService.GetById(id);
 
-            if (result == null)
+            if (result == null || result.Value == null)
             {
                 return NotFound();
             }
@@ -39,32 +38,48 @@ namespace LVTN_BE_COFFE.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<ResponseResult>> Create(AspNetRolesCreateVModel model)
+        public async Task<ActionResult<AspNetRolesGetVModel>> Create(AspNetRolesCreateVModel model)
         {
             if (!ModelState.IsValid)
             {
-                return new BadRequestObjectResult(ModelState);
+                return BadRequest(ModelState);
             }
-            var result = await _rolesService.Create(model);
-            return result;
+
+            try
+            {
+                var result = await _rolesService.Create(model);
+                if (result == null || result.Value == null)
+                {
+                    return BadRequest("Role creation failed");
+                }
+                return CreatedAtAction(nameof(GetById), new { id = result.Value.Id }, result.Value);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         [HttpPut(Strings.IdRoute)]
         public async Task<ActionResult<AspNetRolesGetVModel>> Update(string id, AspNetRolesUpdateVModel model)
         {
-            if (string.IsNullOrEmpty(id))
+            if (string.IsNullOrEmpty(id) || id != model.Id)
             {
-                return BadRequest();
+                return BadRequest("ID mismatch");
             }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             var result = await _rolesService.Update(model);
             if (result == Numbers.FindResponse.NotFound)
             {
                 return NotFound();
             }
-            else
-            {
-                return await GetById(id);
-            }
+
+            return await GetById(id);
         }
 
         [HttpDelete(Strings.IdRoute)]
