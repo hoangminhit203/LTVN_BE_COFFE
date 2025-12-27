@@ -1,5 +1,9 @@
 ﻿using LVTN_BE_COFFE.Domain.IServices;
+using LVTN_BE_COFFE.Domain.Model;
+using LVTN_BE_COFFE.Infrastructures.Entities;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 
 namespace LVTN_BE_COFFE.Controllers
 {
@@ -9,22 +13,14 @@ namespace LVTN_BE_COFFE.Controllers
     {
         private readonly IVnPayService _vnPayService;
         private readonly AppDbContext _context;
+
         public PaymentController(IVnPayService vnPayService, AppDbContext context)
         {
             _vnPayService = vnPayService;
             _context = context;
         }
-        //[HttpPost]
-        //public IActionResult CreatePaymentUrlVnpay(PaymentInfomationModel model)
-        //{
-        //    var url = _vnPayService.CreatePaymentUrl(model, HttpContext);
-        //    if(url == null)
-        //    {
-        //        return BadRequest("Lỗi tạo url thanh toán");
-        //    }
-        //    return Ok(url);
-        //}
-        [HttpPost]
+
+        [HttpPost("create-vnpay-url/{orderId}")]
         public async Task<IActionResult> CreatePaymentUrlVnpay(int orderId)
         {
             var order = await _context.Orders.FindAsync(orderId);
@@ -32,20 +28,27 @@ namespace LVTN_BE_COFFE.Controllers
             {
                 return NotFound("Đơn hàng không tồn tại");
             }
-            var url = _vnPayService.CreatePaymentUrl(order, HttpContext);
-            if (url == null)
+            // Tạo model thông tin thanh toán đơn hàng
+            var paymentInfo = new PaymentInfomationModel
             {
-                return BadRequest("Lỗi tạo url thanh toán");
-            }
-            return Ok(url);
+                OrderId = orderId,
+                OrderType = order.Status ?? "pending",
+                Amount = (double)order.TotalAmount,
+                OrderDescription = $"Thanh toán đơn hàng #{orderId}",
+                Name = order.User?.UserName ?? "Khách"
+            };
+            // Tạo URL thanh toán VNPAY
+            var url = _vnPayService.CreatePaymentUrl(paymentInfo, HttpContext, orderId);
+            return Ok(new { PaymentUrl = url });
         }
-        [HttpGet]
-        public IActionResult PaymentCallbackVnpay()
+
+        [HttpGet("vnpay-callback")]
+        public async Task<IActionResult> VnPayCallback()
         {
-            var response = _vnPayService.PaymentExecute(Request.Query);
-
-            return Ok(response);
+            var result = await _vnPayService.ProcessVnPayCallbackAsync(Request.Query);
+            if (!result)
+                return BadRequest("Payment callback failed or order not found.");
+            return Ok(new { Message = "Payment status updated successfully." });
         }
-
     }
 }
