@@ -11,9 +11,13 @@ namespace LVTN_BE_COFFE.Libraries
     {
         private readonly SortedList<string, string> _requestData = new SortedList<string, string>(new VnPayCompare());
         private readonly SortedList<string, string> _responseData = new SortedList<string, string>(new VnPayCompare());
+
+        // Bước 1: Nhận dữ liệu trả về từ VNPAY và kiểm tra chữ ký
         public PaymentResponseModel GetFullResponseData(IQueryCollection collection, string hashSecret)
         {
+            // Tạo mới đối tượng VnpayLibrary để lưu dữ liệu trả về
             var vnPay = new VnpayLibrary();
+            // Lặp qua tất cả các tham số trả về, chỉ lấy các tham số bắt đầu bằng 'vnp_'
             foreach (var (key, value) in collection)
             {
                 if (!string.IsNullOrEmpty(key) && key.StartsWith("vnp_"))
@@ -21,19 +25,27 @@ namespace LVTN_BE_COFFE.Libraries
                     vnPay.AddResponseData(key, value);
                 }
             }
-            var orderId = Convert.ToInt64(vnPay.GetResponseData("vnp_TxnRef"));
-            var vnPayTranId = Convert.ToInt64(vnPay.GetResponseData("vnp_TransactionNo"));
+            // Lấy mã đơn hàng từ tham số trả về
+            var orderIdStr = vnPay.GetResponseData("vnp_TxnRef");
+            // var orderId = long.TryParse(orderIdStr, out var oid) ? oid : 0;
+            var orderId = orderIdStr;
+            // Lấy mã giao dịch VNPAY
+            var vnPayTranIdStr = vnPay.GetResponseData("vnp_TransactionNo");
+            var vnPayTranId = long.TryParse(vnPayTranIdStr, out var tid) ? tid : 0;
+            // Lấy mã phản hồi từ VNPAY
             var vnpResponseCode = vnPay.GetResponseData("vnp_ResponseCode");
-            var vnpSecureHash =
-                collection.FirstOrDefault(k => k.Key == "vnp_SecureHash").Value; //hash của dữ liệu trả về
+            // Lấy mã hash để kiểm tra chữ ký
+            var vnpSecureHash = collection.FirstOrDefault(k => k.Key == "vnp_SecureHash").Value;
+            // Lấy thông tin đơn hàng
             var orderInfo = vnPay.GetResponseData("vnp_OrderInfo");
-            var checkSignature =
-                vnPay.ValidateSignature(vnpSecureHash, hashSecret); //check Signature
+            // Kiểm tra chữ ký hợp lệ hay không
+            var checkSignature = vnPay.ValidateSignature(vnpSecureHash, hashSecret);
             if (!checkSignature)
                 return new PaymentResponseModel()
                 {
                     Success = false
                 };
+            // Trả về kết quả thanh toán
             return new PaymentResponseModel()
             {
                 Success = true,
@@ -46,6 +58,8 @@ namespace LVTN_BE_COFFE.Libraries
                 VnPayResponseCode = vnpResponseCode
             };
         }
+
+        // Bước 2: Lấy địa chỉ IP của client thực hiện thanh toán
         public string GetIpAddress(HttpContext context)
         {
             var ipAddress = string.Empty;
@@ -73,6 +87,8 @@ namespace LVTN_BE_COFFE.Libraries
 
             return "127.0.0.1";
         }
+
+        // Bước 3: Thêm dữ liệu vào request gửi lên VNPAY
         public void AddRequestData(string key, string value)
         {
             if (!string.IsNullOrEmpty(value))
@@ -81,6 +97,7 @@ namespace LVTN_BE_COFFE.Libraries
             }
         }
 
+        // Bước 4: Thêm dữ liệu vào response nhận từ VNPAY
         public void AddResponseData(string key, string value)
         {
             if (!string.IsNullOrEmpty(value))
@@ -89,14 +106,18 @@ namespace LVTN_BE_COFFE.Libraries
             }
         }
 
+        // Bước 5: Lấy dữ liệu từ response
         public string GetResponseData(string key)
         {
             return _responseData.TryGetValue(key, out var retValue) ? retValue : string.Empty;
         }
+
+        // Bước 6: Tạo URL thanh toán gửi lên VNPAY
         public string CreateRequestUrl(string baseUrl, string vnpHashSecret)
         {
             var data = new StringBuilder();
 
+            // Ghép các tham số thành query string
             foreach (var (key, value) in _requestData.Where(kv => !string.IsNullOrEmpty(kv.Value)))
             {
                 data.Append(WebUtility.UrlEncode(key) + "=" + WebUtility.UrlEncode(value) + "&");
@@ -111,23 +132,28 @@ namespace LVTN_BE_COFFE.Libraries
                 signData = signData.Remove(data.Length - 1, 1);
             }
 
+            // Tạo mã hash để xác thực giao dịch
             var vnpSecureHash = HmacSha512(vnpHashSecret, signData);
             baseUrl += "vnp_SecureHash=" + vnpSecureHash;
 
             return baseUrl;
         }
+
+        // Bước 7: Kiểm tra chữ ký giao dịch trả về từ VNPAY
         public bool ValidateSignature(string inputHash, string secretKey)
         {
             var rspRaw = GetResponseData();
             var myChecksum = HmacSha512(secretKey, rspRaw);
             return myChecksum.Equals(inputHash, StringComparison.InvariantCultureIgnoreCase);
         }
+
+        // Bước 8: Tạo mã hash HMAC SHA512
         private string HmacSha512(string key, string inputData)
         {
             var hash = new StringBuilder();
             var keyBytes = Encoding.UTF8.GetBytes(key);
             var inputBytes = Encoding.UTF8.GetBytes(inputData);
-            using (var hmac = new HMACSHA512(keyBytes))
+            using (var hmac = new System.Security.Cryptography.HMACSHA512(keyBytes))
             {
                 var hashValue = hmac.ComputeHash(inputBytes);
                 foreach (var theByte in hashValue)
@@ -139,6 +165,7 @@ namespace LVTN_BE_COFFE.Libraries
             return hash.ToString();
         }
 
+        // Bước 9: Ghép dữ liệu response thành chuỗi để xác thực chữ ký
         private string GetResponseData()
         {
             var data = new StringBuilder();
@@ -157,7 +184,7 @@ namespace LVTN_BE_COFFE.Libraries
                 data.Append(WebUtility.UrlEncode(key) + "=" + WebUtility.UrlEncode(value) + "&");
             }
 
-            //remove last '&'
+            // Xóa ký tự '&' cuối cùng
             if (data.Length > 0)
             {
                 data.Remove(data.Length - 1, 1);
@@ -166,17 +193,17 @@ namespace LVTN_BE_COFFE.Libraries
             return data.ToString();
         }
 
-
-    }
-    public class VnPayCompare : IComparer<string>
-    {
-        public int Compare(string x, string y)
+        // Bước 10: So sánh key cho SortedList
+        public class VnPayCompare : IComparer<string>
         {
-            if (x == y) return 0;
-            if (x == null) return -1;
-            if (y == null) return 1;
-            var vnpCompare = CompareInfo.GetCompareInfo("en-US");
-            return vnpCompare.Compare(x, y, CompareOptions.Ordinal);
+            public int Compare(string? x, string? y)
+            {
+                if (x == y) return 0;
+                if (x == null) return -1;
+                if (y == null) return 1;
+                var vnpCompare = CompareInfo.GetCompareInfo("en-US");
+                return vnpCompare.Compare(x, y, CompareOptions.Ordinal);
+            }
         }
     }
 
