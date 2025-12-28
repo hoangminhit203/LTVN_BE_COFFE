@@ -30,7 +30,7 @@ namespace LVTN_BE_COFFE.Controllers
             _signInManager = signInManager;
             _tokenService = tokenService;
         }
-        [AllowAnonymous]
+        [Authorize]
         [HttpGet("Me")]
         public async Task<ActionResult<MeVModel>> Me()
         {

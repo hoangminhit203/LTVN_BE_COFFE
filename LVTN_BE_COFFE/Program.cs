@@ -64,6 +64,7 @@ builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services.AddScoped<IVnPayService, VnPayService>();
 builder.Services.AddScoped<IFlavorNotesService, FlavorNoteService>();
 builder.Services.AddScoped<IBrewingMethodsService, BrewingMethodsService>();
+builder.Services.AddScoped<IShippingAddressService, ShippingAddressService>();
 //Product
 builder.Services.AddScoped<IProductService, ProductService>();
 // Add Session
