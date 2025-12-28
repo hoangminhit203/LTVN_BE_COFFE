@@ -1,9 +1,6 @@
 ﻿using LVTN_BE_COFFE.Infrastructures.Entities;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
 
 public class Order : BaseEntity
 {
@@ -13,7 +10,15 @@ public class Order : BaseEntity
     public string? UserId { get; set; }
 
     [Required]
-    public decimal TotalAmount { get; set; } // Tổng tiền trước giảm giá và phí ship
+    // Đây là Tổng tiền hàng (SubTotal) = Tổng (Giá * Số lượng) của các món
+    public decimal TotalAmount { get; set; }
+
+    // --- MỚI THÊM: Phí vận chuyển ---
+    [Required]
+    public decimal ShippingFee { get; set; } = 0;
+
+    // --- MỚI THÊM: Số tiền được giảm giá (Lưu cứng giá trị lúc đặt hàng) ---
+    public decimal DiscountAmount { get; set; } = 0;
 
     [StringLength(50)]
     public string? ShippingMethod { get; set; }
@@ -48,20 +53,15 @@ public class Order : BaseEntity
     [NotMapped]
     public int ItemCount => OrderItems?.Sum(i => i.Quantity) ?? 0;
 
+    // --- CẬP NHẬT: Công thức tính tổng tiền cuối cùng ---
+    // Công thức: (Tiền hàng + Tiền ship) - Tiền giảm giá
     [NotMapped]
     public decimal FinalAmount
     {
         get
         {
-            var discount = GetDiscountAmount();
-            var final = TotalAmount - discount;
+            var final = (TotalAmount + ShippingFee) - DiscountAmount;
             return final < 0 ? 0 : final;
         }
-    }
-
-    private decimal GetDiscountAmount()
-    {
-        if (Promotion == null) return 0m;
-        return 0m;
     }
 }

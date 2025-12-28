@@ -1,18 +1,16 @@
-﻿using DocumentFormat.OpenXml.Spreadsheet;
-using LVTN_BE_COFFE.Domain.IServices;
+﻿using LVTN_BE_COFFE.Domain.IServices;
 using LVTN_BE_COFFE.Domain.Model;
 using LVTN_BE_COFFE.Domain.VModel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
-using System.Threading.Tasks;
+using System.Security.Claims;
 
 namespace LVTN_BE_COFFE.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
-    [Authorize]
+    [Route("api/order")]
+    [Authorize] // Bắt buộc đăng nhập cho toàn bộ Controller
     public class OrderController : ControllerBase
     {
         private readonly IOrderService _orderService;
@@ -22,58 +20,79 @@ namespace LVTN_BE_COFFE.Controllers
             _orderService = orderService;
         }
 
+        // ============================================================
+        // HÀM HỖ TRỢ: LẤY USER ID TỪ TOKEN
+        // ============================================================
         private string GetUserId()
         {
-            // 1. Kiểm tra xem người dùng đã được xác thực chưa
             if (!User.Identity.IsAuthenticated)
-            {
-                // Hoặc trả về 401/403, nhưng ném Exception theo cách cũ để khớp với lỗi của bạn
-                throw new System.Exception("User not authenticated");
-            }
+                throw new UnauthorizedAccessException("User not authenticated");
 
-            // 2. Trích xuất ID từ Claim
-            // Tùy thuộc vào cách bạn tạo Token, ID có thể là ClaimTypes.NameIdentifier HOẶC JwtRegisteredClaimNames.Sub.
-            // Vì token của bạn dùng 'sub' làm ID, ta dùng nó:
-            var userId = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
-                         ?? User.Claims.FirstOrDefault(c => c.Type == System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            // Ưu tiên lấy 'sub', nếu không có thì lấy 'nameidentifier'
+            var userId = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+                         ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             if (string.IsNullOrEmpty(userId))
-            {
-                // 3. Nếu không tìm thấy, ném lỗi
-                throw new System.Exception("User ID claim not found in token.");
-            }
+                throw new UnauthorizedAccessException("User ID claim not found in token.");
 
             return userId;
         }
-        // GET: api/Order
-        //[HttpGet]
-        //public async Task<ActionResult<<OrderResponse>> GetAll([FromQuery] OrderFilterVModel filter)
-        //{
-        //    return await _orderService.GetAllOrders(filter);
-        //}
 
-        // GET: api/Order/{id}
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<OrderResponse>>> GetOrderUser()
+        // ============================================================
+        // 1. TẠO ĐƠN HÀNG MỚI
+        // POST: api/order
+        // ============================================================
+        [HttpPost]
+        public async Task<ActionResult<ResponseResult>> CreateOrder([FromBody] OrderCreateVModel model)
+        {
+            // Lưu ý: Dùng [FromBody] để nhận JSON phức tạp
+            var userId = GetUserId();
+            return await _orderService.CreateOrder(userId, model);
+        }
+
+        // ============================================================
+        // 2. LẤY LỊCH SỬ ĐƠN HÀNG CỦA TÔI
+        // GET: api/order/history
+        // ============================================================
+        [HttpGet("history")]
+        public async Task<ActionResult<ResponseResult>> GetMyOrders()
         {
             var userId = GetUserId();
             return await _orderService.GetOrdersByUser(userId);
         }
 
-        // POST: api/Order
-        [HttpPost]
-        public async Task<ActionResult<OrderResponse>?> CreateOrder([FromQuery] OrderCreateVModel model)
+        // ============================================================
+        // 3. LẤY CHI TIẾT 1 ĐƠN HÀNG
+        // GET: api/order/{id}
+        // ============================================================
+        [HttpGet("{id}")]
+        public async Task<ActionResult<ResponseResult>> GetOrderById(int id)
         {
             var userId = GetUserId();
-            return await _orderService.CreateOrder(userId, model);
+            return await _orderService.GetOrder(id, userId);
         }
 
-        [HttpPut]
-        public async Task<ActionResult<bool>> updateStatus(int orderId, string status)
+        // ============================================================
+        // 4. KHÁCH HÀNG HỦY ĐƠN
+        // PUT: api/order/{id}/cancel
+        // ============================================================
+        [HttpPut("{id}/cancel")]
+        public async Task<ActionResult<ResponseResult>> CancelOrder(int id)
         {
             var userId = GetUserId();
-            return await _orderService.UpdateOrderStatus(orderId, status);
+            return await _orderService.CancelOrder(id, userId);
         }
 
+        // ============================================================
+        // 5. ADMIN/SHIPPER CẬP NHẬT TRẠNG THÁI (Pending -> Shipping...)
+        // PUT: api/order/{id}/status?status=shipping
+        // ============================================================
+        [HttpPut("{id}/status")]
+        // [Authorize(Roles = "Admin,Shipper")] // Nếu muốn chỉ Admin được gọi
+        public async Task<ActionResult<ResponseResult>> UpdateStatus(int id, [FromQuery] string status)
+        {
+            // Hàm này không cần check UserId sở hữu đơn, vì Admin có quyền sửa mọi đơn
+            return await _orderService.UpdateOrderStatus(id, status);
+        }
     }
 }
