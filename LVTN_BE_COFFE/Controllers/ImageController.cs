@@ -27,7 +27,7 @@ namespace LVTN_BE_COFFE.Controllers
         /// API Thêm mới ảnh sản phẩm (Upload file).
         /// </summary>
         /// <param name="model">Chứa file ảnh và thông tin liên quan (ProductId, VariantId, etc.)</param>
-        [HttpPost]
+        [HttpPost("product-images")]
         [Consumes("multipart/form-data")] // Quan trọng: Bắt buộc phải có để nhận file từ Client
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
