@@ -33,7 +33,7 @@ namespace LVTN_BE_COFFE.Controllers
             {
                 OrderId = orderId,
                 OrderType = order.Status ?? "pending",
-                Amount = (double)order.TotalAmount,
+                Amount = (double)order.FinalAmount,
                 OrderDescription = $"Thanh toán đơn hàng #{orderId}",
                 Name = order.User?.UserName ?? "Khách"
             };

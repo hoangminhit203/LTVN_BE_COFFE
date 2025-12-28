@@ -1,25 +1,37 @@
 ﻿using LVTN_BE_COFFE.Domain.Model;
 using LVTN_BE_COFFE.Domain.VModel;
 using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
 
-public interface IOrderService
+namespace LVTN_BE_COFFE.Domain.IServices
 {
-    // Tạo đơn hàng từ giỏ hàng của user
-    Task<ActionResult<OrderResponse>?> CreateOrder(string userId, OrderCreateVModel model);
+    public interface IOrderService
+    {
+        /// <summary>
+        /// Tạo đơn hàng mới từ giỏ hàng
+        /// </summary>
+        Task<ActionResult<ResponseResult>> CreateOrder(string userId, OrderCreateVModel model);
 
-    // Lấy danh sách đơn của user (có phân trang)
-    Task<ActionResult<IEnumerable<OrderResponse>>> GetOrdersByUser(string userId);
+        /// <summary>
+        /// Lấy danh sách đơn hàng của một User cụ thể
+        /// </summary>
+        Task<ActionResult<ResponseResult>> GetOrdersByUser(string userId);
 
-    // Lấy chi tiết 1 đơn hàng
-    Task<ActionResult<OrderResponse>?> GetOrder(int orderId, string userId);
+        /// <summary>
+        /// Lấy chi tiết một đơn hàng (Check cả UserId để bảo mật)
+        /// </summary>
+        Task<ActionResult<ResponseResult>> GetOrder(int orderId, string userId);
 
-    // Admin: Lấy toàn bộ đơn (phân trang)
-    //Task<ActionResult<PaginationModel<OrderResponse>>> GetAllOrders(OrderFilterVModel filter);
+        /// <summary>
+        /// Admin/Shipper cập nhật trạng thái đơn hàng (Pending -> Shipping -> Completed...)
+        /// </summary>
+        Task<ActionResult<ResponseResult>> UpdateOrderStatus(int orderId, string status);
 
-    // Admin: Cập nhật trạng thái đơn
-    Task<ActionResult<bool>> UpdateOrderStatus(int orderId, string status);
+        /// <summary>
+        /// Khách hàng hủy đơn (Chỉ hủy được khi còn Pending)
+        /// </summary>
+        Task<ActionResult<ResponseResult>> CancelOrder(int orderId, string userId);
 
-    // Xóa đơn hàng
-    Task<ActionResult<bool>> CancelOrder(int orderId, string userId);
+        // Nếu sau này bạn muốn làm chức năng Admin quản lý tất cả đơn hàng thì mở comment này ra:
+        // Task<ActionResult<ResponseResult>> GetAllOrders(OrderFilterVModel filter);
+    }
 }

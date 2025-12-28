@@ -1,204 +1,295 @@
-﻿using LVTN_BE_COFFE.Domain.IServices;
+﻿
+using LVTN_BE_COFFE.Domain.IServices;
+using LVTN_BE_COFFE.Domain.Model;
 using LVTN_BE_COFFE.Domain.VModel;
 using LVTN_BE_COFFE.Infrastructures.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 public class OrderService : IOrderService
 {
     private readonly AppDbContext _context;
     private readonly ICartService _cartService;
+    private readonly ILogger<OrderService> _logger;
 
-    public OrderService(AppDbContext context, ICartService cartService)
+    public OrderService(AppDbContext context, ICartService cartService, ILogger<OrderService> logger)
     {
         _context = context;
         _cartService = cartService;
+        _logger = logger;   
     }
 
-    public async Task<ActionResult<OrderResponse>?> CreateOrder(string userId, OrderCreateVModel model)
+    // =========================================================================
+    // 1. TẠO ĐƠN HÀNG (CORE LOGIC)
+    // =========================================================================
+    public async Task<ActionResult<ResponseResult>> CreateOrder(string userId, OrderCreateVModel model)
     {
+        // 1. Kiểm tra giỏ hàng
         var cart = await _cartService.GetCartByUserAsync(userId);
         if (cart == null || !cart.Items.Any())
-            return new BadRequestObjectResult("Cart is empty");
+            return new BadRequestObjectResult(new ResponseResult { IsSuccess = false, Message = "Giỏ hàng trống." });
 
+        // Bắt đầu Transaction (Quan trọng: Mọi thay đổi DB phải thành công cùng lúc)
         using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
-            // Lấy địa chỉ shipping
+            // 2. Xử lý Địa chỉ & Tính phí Ship
+            int finalShippingAddressId = 0;
             string finalAddressString = string.Empty;
 
+            // Trường hợp A: User chọn địa chỉ có sẵn
             if (model.ShippingAddressId.HasValue)
             {
-                var addr = await _context.ShippingAddresses
+                var existingAddr = await _context.ShippingAddresses
                     .FirstOrDefaultAsync(a => a.Id == model.ShippingAddressId.Value && a.UserId == userId);
-                if (addr == null) throw new Exception("Invalid shipping address");
-                finalAddressString = addr.FullAddress;
+
+                if (existingAddr == null)
+                    throw new Exception("Địa chỉ giao hàng không hợp lệ.");
+
+                finalShippingAddressId = existingAddr.Id;
+                finalAddressString = existingAddr.FullAddress;
             }
+            // Trường hợp B: User nhập địa chỉ mới (string) -> Phải tạo mới trong DB để lấy ID
             else if (!string.IsNullOrEmpty(model.ShippingAddress))
             {
                 var newAddr = new ShippingAddress
                 {
                     UserId = userId,
                     FullAddress = model.ShippingAddress,
-                    IsDefault = false
+                    IsDefault = false, // Địa chỉ nhập nhanh thường không set default
+                    ReceiverName = "N/A", // Cần bổ sung logic lấy tên người nhận nếu có
+                    Phone = "N/A"
                 };
                 _context.ShippingAddresses.Add(newAddr);
+                await _context.SaveChangesAsync(); // Lưu để lấy ID
+
+                finalShippingAddressId = newAddr.Id;
                 finalAddressString = newAddr.FullAddress;
             }
+            // Trường hợp C: Lấy mặc định
             else
             {
-                var user = await _context.Users.Include(u => u.ShippingAddresses)
-                                               .AsNoTracking()
-                                               .FirstOrDefaultAsync(u => u.Id == userId);
-                var defaultAddr = user?.ShippingAddresses?.FirstOrDefault();
-                if (defaultAddr == null) throw new Exception("No shipping address available");
+                var defaultAddr = await _context.ShippingAddresses
+                    .FirstOrDefaultAsync(u => u.UserId == userId && u.IsDefault);
+
+                if (defaultAddr == null)
+                    throw new Exception("Vui lòng chọn hoặc nhập địa chỉ giao hàng.");
+
+                finalShippingAddressId = defaultAddr.Id;
                 finalAddressString = defaultAddr.FullAddress;
             }
 
-            // Tạo order
-            var order = new Order
-            {
-                UserId = userId,
-                Status = "pending",
-                ShippingMethod = model.ShippingMethod,
-                ShippingAddress = new ShippingAddress
-                {
-                    FullAddress = finalAddressString,
-                    UserId = userId
-                },
-                CreatedAt = DateTime.UtcNow
-            };
-            _context.Orders.Add(order);
-            await _context.SaveChangesAsync();
+            // Tính phí ship (Hàm riêng bên dưới)
+            decimal shippingFee = CalculateShippingFee(finalAddressString);
 
-            // Lấy danh sách ProductVariant liên quan
+            // 3. Chuẩn bị dữ liệu Order Items & Kiểm tra tồn kho
+            // Lấy danh sách ProductVariant ID từ giỏ hàng
             var variantIds = cart.Items.Select(ci => ci.ProductVariantId).ToList();
+
+            // Load Variants từ DB để check giá và tồn kho thực tế (Không tin tưởng dữ liệu từ FE gửi lên)
             var variants = await _context.ProductVariant
                 .Include(v => v.Product)
                 .Where(v => variantIds.Contains(v.Id))
                 .ToDictionaryAsync(v => v.Id);
 
             var orderItems = new List<OrderItem>();
-            decimal totalAmount = 0;
+            decimal subTotalAmount = 0;
 
             foreach (var ci in cart.Items)
             {
                 if (!variants.TryGetValue(ci.ProductVariantId, out var variant))
-                    throw new Exception($"Product variant {ci.ProductVariantId} not found");
+                    throw new Exception($"Sản phẩm variant {ci.ProductVariantId} không tồn tại.");
 
+                // Check tồn kho
                 if (variant.Stock < ci.Quantity)
-                    throw new Exception($"Not enough stock for {variant.Product.Name}");
+                    throw new Exception($"Sản phẩm '{variant.Product.Name}' không đủ hàng (Còn: {variant.Stock}).");
 
+                // Trừ tồn kho
                 variant.Stock -= ci.Quantity;
                 _context.ProductVariant.Update(variant);
 
+                // Tạo OrderItem
                 var item = new OrderItem
                 {
-                    OrderId = order.OrderId,
                     ProductVariantId = variant.Id,
                     ProductNameAtPurchase = variant.Product.Name,
                     Quantity = ci.Quantity,
-                    PriceAtPurchase = variant.Price
+                    PriceAtPurchase = variant.Price // Lấy giá từ DB
                 };
-                orderItems.Add(item);
+                // Subtotal của Item tự tính trong getter của OrderItem (hoặc tính tay ở đây nếu muốn)
+                // Giả sử OrderItem có property Subtotal = Price * Quantity
+                subTotalAmount += (item.PriceAtPurchase * item.Quantity);
 
-                totalAmount += item.Subtotal;
+                orderItems.Add(item);
             }
 
-            _context.OrderItems.AddRange(orderItems);
+            // 4. Tính toán Voucher/Giảm giá (Nếu có)
+            decimal discountAmount = 0;
+            if (!string.IsNullOrEmpty(model.VoucherCode))
+            {
+                // Gọi hàm check voucher ở đây (Logic này tùy bạn triển khai)
+                // discountAmount = CheckVoucher(model.VoucherCode, subTotalAmount);
+                discountAmount = 0; // Tạm thời để 0
+            }
 
-            order.TotalAmount = totalAmount;
-            _context.Orders.Update(order);
+            // 5. Tạo Order Entity
+            var order = new Order
+            {
+                UserId = userId,
+                Status = "pending",
+                ShippingMethod = model.ShippingMethod ?? "Standard",
+                ShippingAddressId = finalShippingAddressId, // Quan trọng: Link tới bảng địa chỉ
 
+                // Tiền nong
+                TotalAmount = subTotalAmount, // Tổng tiền hàng
+                ShippingFee = shippingFee,    // Phí ship
+                DiscountAmount = discountAmount, // Giảm giá
+
+                VoucherCode = model.VoucherCode,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                OrderDate = DateTime.Now
+            };
+
+            // Entity Framework thông minh sẽ tự gán OrderId cho các OrderItem bên dưới khi Add order
+            order.OrderItems = orderItems;
+
+            _context.Orders.Add(order);
+            await _context.SaveChangesAsync();
+
+            // 6. Xóa giỏ hàng sau khi mua thành công
             await _cartService.ClearCartAsync(cart.CartId, userId);
 
-            await _context.SaveChangesAsync();
+            // Commit Transaction
             await transaction.CommitAsync();
 
-            return MapToResponse(order);
+            // Return kết quả
+            return new OkObjectResult(new ResponseResult
+            {
+                IsSuccess = true,
+                Message = "Đặt hàng thành công",
+                Data = MapToResponse(order)
+            });
         }
         catch (Exception ex)
         {
-            await transaction.RollbackAsync();
-            return new BadRequestObjectResult(ex.Message);
+            await transaction.RollbackAsync(); // Hoàn tác nếu lỗi
+            return new BadRequestObjectResult(new ResponseResult { IsSuccess = false, Message = ex.Message });
         }
     }
 
-    public async Task<ActionResult<OrderResponse>?> GetOrder(int orderId, string userId)
+    // =========================================================================
+    // 2. LẤY CHI TIẾT ĐƠN HÀNG
+    // =========================================================================
+    public async Task<ActionResult<ResponseResult>> GetOrder(int orderId, string userId)
     {
         var order = await _context.Orders
+            .Include(o => o.ShippingAddress) // Include địa chỉ
             .Include(o => o.OrderItems)
                 .ThenInclude(oi => oi.ProductVariant)
                     .ThenInclude(v => v.Product)
             .FirstOrDefaultAsync(o => o.OrderId == orderId && o.UserId == userId);
 
         if (order == null)
-            return new NotFoundObjectResult("Order not found");
+            return new NotFoundObjectResult(new ResponseResult { IsSuccess = false, Message = "Không tìm thấy đơn hàng" });
 
-        return MapToResponse(order);
+        return new OkObjectResult(new ResponseResult
+        {
+            IsSuccess = true,
+            Data = MapToResponse(order)
+        });
     }
 
-    public async Task<ActionResult<IEnumerable<OrderResponse>>> GetOrdersByUser(string userId)
+    // =========================================================================
+    // 3. LẤY DANH SÁCH ĐƠN HÀNG CỦA USER
+    // =========================================================================
+    public async Task<ActionResult<ResponseResult>> GetOrdersByUser(string userId)
     {
         var orders = await _context.Orders
             .Where(o => o.UserId == userId)
+            .Include(o => o.ShippingAddress)
             .Include(o => o.OrderItems)
                 .ThenInclude(oi => oi.ProductVariant)
                     .ThenInclude(v => v.Product)
+            .OrderByDescending(o => o.CreatedAt) // Mới nhất lên đầu
             .ToListAsync();
 
-        return orders.Select(MapToResponse).ToList();
+        var responseData = orders.Select(MapToResponse).ToList();
+
+        return new OkObjectResult(new ResponseResult
+        {
+            IsSuccess = true,
+            Data = responseData
+        });
     }
 
-    public async Task<ActionResult<bool>> UpdateOrderStatus(int orderId, string status)
+    // =========================================================================
+    // 4. CẬP NHẬT TRẠNG THÁI (ADMIN/SHIPPER)
+    // =========================================================================
+    public async Task<ActionResult<ResponseResult>> UpdateOrderStatus(int orderId, string status)
     {
-        if (string.IsNullOrEmpty(status))
-            return new BadRequestObjectResult("Status cannot be empty");
-
         var order = await _context.Orders.FirstOrDefaultAsync(o => o.OrderId == orderId);
-        if (order == null) return new NotFoundResult();
+        if (order == null)
+            return new NotFoundObjectResult(new ResponseResult { IsSuccess = false, Message = "Không tìm thấy đơn hàng" });
 
         order.Status = status;
         order.UpdatedAt = DateTime.UtcNow;
 
-        try
-        {
-            await _context.SaveChangesAsync();
-            return true;
-        }
-        catch
-        {
-            return new StatusCodeResult(500);
-        }
+        await _context.SaveChangesAsync();
+
+        return new OkObjectResult(new ResponseResult { IsSuccess = true, Message = "Cập nhật trạng thái thành công" });
     }
 
-    public async Task<ActionResult<bool>> CancelOrder(int orderId, string userId)
+    // =========================================================================
+    // 5. HỦY ĐƠN HÀNG
+    // =========================================================================
+    public async Task<ActionResult<ResponseResult>> CancelOrder(int orderId, string userId)
     {
-        var order = await _context.Orders.FirstOrDefaultAsync(o => o.OrderId == orderId && o.UserId == userId);
-        if (order == null) return new NotFoundResult();
+        var order = await _context.Orders
+            .Include(o => o.OrderItems)
+            .ThenInclude(oi => oi.ProductVariant) // Include để trả lại tồn kho
+            .FirstOrDefaultAsync(o => o.OrderId == orderId && o.UserId == userId);
 
-        if (order.Status == "completed")
-            return new BadRequestObjectResult("Cannot cancel a completed order");
+        if (order == null)
+            return new NotFoundObjectResult(new ResponseResult { IsSuccess = false, Message = "Không tìm thấy đơn hàng" });
+
+        // Chỉ cho hủy khi đơn hàng chưa hoàn thành hoặc đang giao
+        if (order.Status == "completed" || order.Status == "shipping" || order.Status == "cancelled")
+            return new BadRequestObjectResult(new ResponseResult { IsSuccess = false, Message = "Không thể hủy đơn hàng ở trạng thái này." });
+
+        // Logic hoàn trả tồn kho (nếu cần thiết)
+        foreach (var item in order.OrderItems)
+        {
+            var variant = item.ProductVariant;
+            if (variant != null)
+            {
+                variant.Stock += item.Quantity; // Cộng lại kho
+            }
+        }
 
         order.Status = "cancelled";
         order.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
-        return true;
+        return new OkObjectResult(new ResponseResult { IsSuccess = true, Message = "Đã hủy đơn hàng thành công." });
     }
 
-    public static OrderResponse MapToResponse(Order order)
+    // =========================================================================
+    // HELPER METHODS
+    // =========================================================================
+
+    // Hàm map Entity sang Response Model
+    private static OrderResponse MapToResponse(Order order)
     {
         return new OrderResponse
         {
             Id = order.OrderId,
-            TotalAmount = order.TotalAmount,
-            FinalAmount = order.FinalAmount,
-            ShippingAddress = order.ShippingAddress?.FullAddress ?? "",
+            TotalAmount = order.TotalAmount,     // Tiền hàng
+            ShippingFee = order.ShippingFee,     // Phí ship
+            DiscountAmount = order.DiscountAmount, // Giảm giá
+            FinalAmount = order.FinalAmount,     // Tổng thanh toán (đã tính trong Entity)
+
+            ShippingAddress = order.ShippingAddress?.FullAddress ?? "N/A",
             ShippingMethod = order.ShippingMethod,
             Status = order.Status,
             PromotionId = order.PromotionId,
@@ -213,10 +304,22 @@ public class OrderService : IOrderService
                 ProductName = oi.ProductNameAtPurchase,
                 Quantity = oi.Quantity,
                 PriceAtPurchase = oi.PriceAtPurchase,
-                Subtotal = oi.Subtotal
+                Subtotal = oi.PriceAtPurchase * oi.Quantity
             }).ToList() ?? new List<OrderItemResponse>()
         };
     }
 
-   
+    // Hàm tính phí ship đơn giản
+    private decimal CalculateShippingFee(string address)
+    {
+        if (string.IsNullOrEmpty(address)) return 0;
+
+        string addressLower = address.ToLower();
+        if (addressLower.Contains("hồ chí minh") || addressLower.Contains("tphcm"))
+            return 15000;
+        if (addressLower.Contains("hà nội"))
+            return 25000;
+
+        return 35000; // Các tỉnh còn lại
+    }
 }
