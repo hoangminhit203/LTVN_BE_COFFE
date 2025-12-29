@@ -11,5 +11,6 @@ namespace LVTN_BE_COFFE.Domain.IServices
         Task<ActionResult<ResponseResult>> DeleteCategory(int id);
         Task<ActionResult<ResponseResult>?> GetCategory(int id);
         Task<ActionResult<ResponseResult>> GetAllCategories(CategoryFilterVModel filter);
+        Task<ActionResult<ResponseResult>> GetProductsByCategoryId(int categoryId, int pageNumber = 1, int pageSize = 10);
     }
 }
