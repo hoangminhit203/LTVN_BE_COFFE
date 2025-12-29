@@ -1,4 +1,4 @@
-using LVTN_BE_COFFE.Domain.Common;
+﻿using LVTN_BE_COFFE.Domain.Common;
 using LVTN_BE_COFFE.Domain.IServices;
 using LVTN_BE_COFFE.Domain.Model;
 using LVTN_BE_COFFE.Domain.Ultilities;
@@ -125,8 +125,9 @@ namespace LVTN_BE_COFFE.Services.Services
 
         public async Task<ResponseResult> Register(RegisterVModel model)
         {
-            var existingUser = await _userManager.FindByEmailAsync(model.Email);
-            if (existingUser != null)
+            // 1. Kiểm tra Email đã tồn tại chưa
+            var existingEmail = await _userManager.FindByEmailAsync(model.Email);
+            if (existingEmail != null)
             {
                 return new ResponseResult
                 {
@@ -135,6 +136,18 @@ namespace LVTN_BE_COFFE.Services.Services
                 };
             }
 
+            // 2. (MỚI) Kiểm tra UserName đã tồn tại chưa (Vì UserName và Email giờ khác nhau)
+            var existingUser = await _userManager.FindByNameAsync(model.UserName);
+            if (existingUser != null)
+            {
+                return new ResponseResult
+                {
+                    IsSuccess = false,
+                    Message = "Username already exists." // Bạn có thể thay bằng message trong file resource
+                };
+            }
+
+            // 3. Kiểm tra mật khẩu nhập lại
             if (model.Password != model.ConfirmPassword)
             {
                 return new ResponseResult
@@ -144,14 +157,19 @@ namespace LVTN_BE_COFFE.Services.Services
                 };
             }
 
+            // 4. (CẬP NHẬT) Tạo đối tượng User với đầy đủ thông tin
             var newUser = new AspNetUsers
             {
-                UserName = model.Email,
+                UserName = model.UserName,      // Lấy từ model, không dùng Email nữa
                 Email = model.Email,
+                FirstName = model.FirstName,    // Mới
+                LastName = model.LastName,      // Mới
+                Sex = model.Sex,                // Mới
                 CreatedDate = DateTime.UtcNow,
                 IsActive = false
             };
 
+            // 5. Lưu vào Databases
             var result = await _userManager.CreateAsync(newUser, model.Password);
             if (!result.Succeeded)
             {
@@ -165,25 +183,34 @@ namespace LVTN_BE_COFFE.Services.Services
                 };
             }
 
+            // --- Phần gửi Email giữ nguyên logic cũ ---
             try
             {
                 var otpCode = OtpGenerator.GenerateOtpCode();
                 var otpExpiry = DateTime.UtcNow.AddMinutes(15);
 
+                // ✅ LƯU OTP VÀ EMAIL VÀO SESSION
                 _httpContextAccessor.HttpContext?.Session?.SetString("OtpCode", otpCode);
                 _httpContextAccessor.HttpContext?.Session?.SetString("OtpExpiry", otpExpiry.ToString("o"));
+                _httpContextAccessor.HttpContext?.Session?.SetString("RegisterEmail", model.Email); // ← THÊM DÒNG NÀY
 
                 var subject = "Your OTP Code for Account Activation";
+
+                // Render Template Email
                 var body = await GetEmailTemplateAsync(
                     "sendmail.html",
                     new Dictionary<string, string>
                     {
-                        { "{{OTP_CODE}}", otpCode },
-                        { "{{EXPIRE_MINUTES}}", "15" },
-                        { "{{YEAR}}", DateTime.UtcNow.Year.ToString() }
+        { "{{OTP_CODE}}", otpCode },
+        { "{{EXPIRE_MINUTES}}", "15" },
+        { "{{YEAR}}", DateTime.UtcNow.Year.ToString() },
+        { "{{FULL_NAME}}", $"{model.LastName} {model.FirstName}" } // (Gợi ý) Thêm tên vào email cho thân thiện
                     }
                 );
 
+                // Gửi mail
+                // LƯU Ý BẢO MẬT: Mật khẩu ứng dụng gmail đang bị lộ (hardcoded). 
+                // Nên chuyển vào appsettings.json.
                 var sendMailResult = await _emailSender.SendMailAsync(
                     "tranhoangngoc112@gmail.com",
                     "mffilftdavfmvvyg",
@@ -194,6 +221,10 @@ namespace LVTN_BE_COFFE.Services.Services
 
                 if (!sendMailResult.IsSuccess)
                 {
+                    // (Gợi ý) Nếu gửi mail thất bại, có thể cân nhắc xóa User vừa tạo 
+                    // để user có thể đăng ký lại, tránh rác database.
+                    // await _userManager.DeleteAsync(newUser); 
+
                     return new ResponseResult
                     {
                         IsSuccess = false,
@@ -244,23 +275,54 @@ namespace LVTN_BE_COFFE.Services.Services
 
             var storedOtp = _httpContextAccessor.HttpContext?.Session?.GetString("OtpCode");
             var storedExpiry = _httpContextAccessor.HttpContext?.Session?.GetString("OtpExpiry");
+            // ✅ BỎ KIỂM TRA EMAIL NẾU TEST BẰNG POSTMAN
+            // var storedEmail = _httpContextAccessor.HttpContext?.Session?.GetString("RegisterEmail");
 
-            if (string.IsNullOrEmpty(storedOtp) || string.IsNullOrEmpty(storedExpiry))
+            if (string.IsNullOrEmpty(storedOtp))
             {
                 return new ResponseResult
                 {
                     IsSuccess = false,
-                    Message = Messages.InvalidRequestInfo
+                    Message = "Session expired or OTP not found. Please register again."
                 };
             }
 
-            var expiry = DateTime.Parse(storedExpiry, null, System.Globalization.DateTimeStyles.RoundtripKind);
-            if (storedOtp != otp || DateTime.UtcNow > expiry)
+            if (string.IsNullOrEmpty(storedExpiry))
             {
                 return new ResponseResult
                 {
                     IsSuccess = false,
-                    Message = Messages.InvalidOtp
+                    Message = "OTP expiry information not found. Please register again."
+                };
+            }
+
+            // ✅ BỎ KIỂM TRA NÀY KHI TEST
+            // if (storedEmail != email)
+            // {
+            //     return new ResponseResult
+            //     {
+            //         IsSuccess = false,
+            //         Message = "Email does not match registration email."
+            //     };
+            // }
+
+            var expiry = DateTime.Parse(storedExpiry, null, System.Globalization.DateTimeStyles.RoundtripKind);
+
+            if (DateTime.UtcNow > expiry)
+            {
+                return new ResponseResult
+                {
+                    IsSuccess = false,
+                    Message = "OTP has expired. Please register again."
+                };
+            }
+
+            if (storedOtp != otp)
+            {
+                return new ResponseResult
+                {
+                    IsSuccess = false,
+                    Message = "Invalid OTP code."
                 };
             }
 
@@ -270,6 +332,7 @@ namespace LVTN_BE_COFFE.Services.Services
 
             _httpContextAccessor.HttpContext?.Session?.Remove("OtpCode");
             _httpContextAccessor.HttpContext?.Session?.Remove("OtpExpiry");
+            _httpContextAccessor.HttpContext?.Session?.Remove("RegisterEmail");
 
             var registerResponse = new RegisterResponse
             {

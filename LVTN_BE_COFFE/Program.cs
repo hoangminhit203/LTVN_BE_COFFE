@@ -15,13 +15,14 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. CORS
+// ✅ 1. SỬA CORS - Thay AllowAnyOrigin bằng WithOrigins và thêm AllowCredentials
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
-        policy.AllowAnyOrigin()
+        policy.WithOrigins("http://localhost:3000", "http://localhost:3001", "https://yourdomain.com")// domain
               .AllowAnyMethod()
               .AllowAnyHeader()
+              .AllowCredentials() // ← QUAN TRỌNG: Cho phép gửi Cookie/Session
               .WithExposedHeaders("X-Guest-Key"));
 });
 
@@ -71,13 +72,15 @@ builder.Services.AddScoped<IBrewingMethodsService, BrewingMethodsService>();
 builder.Services.AddScoped<IShippingAddressService, ShippingAddressService>();
 //Product
 builder.Services.AddScoped<IProductService, ProductService>();
-// Add Session
+// ✅ Add Session với cấu hình CORS-friendly
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(30);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
+    options.Cookie.SameSite = SameSiteMode.None; // ← THÊM: Cho phép cross-origin
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // ← THÊM: Yêu cầu HTTPS (nếu production)
 });
 
 // JWT Config
@@ -169,13 +172,12 @@ builder.Services.AddSwaggerGen(c =>
 var app = builder.Build();
 app.UseCors("AllowAll");
 // Configure the HTTP request pipeline.
+app.UseSession(); // ← Đã đúng vị trí
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseHttpsRedirection();
-app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
 
 app.Run();
