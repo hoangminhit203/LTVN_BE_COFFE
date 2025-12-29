@@ -1,11 +1,6 @@
 ﻿using LVTN_BE_COFFE.Domain.IServices;
 using LVTN_BE_COFFE.Domain.VModel;
-using LVTN_BE_COFFE.Infrastructures.Entities;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Collections.Generic;
 
 namespace LVTN_BE_COFFE.Domain.Services
 {
@@ -18,37 +13,31 @@ namespace LVTN_BE_COFFE.Domain.Services
             _context = context;
         }
 
-        public async Task<CartResponse?> GetCartByUserAsync(string userId)
+        public async Task<CartResponse?> GetCartAsync(string? userId, string? guestKey)
         {
+            if (string.IsNullOrEmpty(userId) && string.IsNullOrEmpty(guestKey)) return null;
+
             var cart = await _context.Carts
                 .Include(c => c.CartItems)
                     .ThenInclude(ci => ci.ProductVariant)
                         .ThenInclude(v => v.Product)
                 .Include(c => c.User)
-                .FirstOrDefaultAsync(c => c.UserId == userId && c.Status == "Active");
+                .FirstOrDefaultAsync(c => c.Status == "Active" &&
+                    ((userId != null && c.UserId == userId) ||
+                     (guestKey != null && c.GuestKey == guestKey)));
 
             return cart == null ? null : MapToResponse(cart);
         }
 
-        /// <summary>
-        /// Tạo cart nếu chưa tồn tại active cart cho user.
-        /// Trả về CartResponse có CartId để service khác sử dụng.
-        /// </summary>
-        public async Task<CartResponse> CreateCartIfNotExistsAsync(string userId)
+        public async Task<CartResponse> CreateCartIfNotExistsAsync(string? userId, string? guestKey)
         {
-            var existing = await _context.Carts
-                .Include(c => c.CartItems)
-                    .ThenInclude(ci => ci.ProductVariant)
-                        .ThenInclude(v => v.Product)
-                .Include(c => c.User)
-                .FirstOrDefaultAsync(c => c.UserId == userId && c.Status == "Active");
-
-            if (existing != null)
-                return MapToResponse(existing);
+            var existing = await GetCartAsync(userId, guestKey);
+            if (existing != null) return existing;
 
             var cart = new Cart
             {
                 UserId = userId,
+                GuestKey = guestKey,
                 Status = "Active",
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
@@ -60,11 +49,11 @@ namespace LVTN_BE_COFFE.Domain.Services
             return MapToResponse(cart);
         }
 
-        public async Task<bool> ClearCartAsync(int cartId, string userId)
+        public async Task<bool> ClearCartAsync(int cartId)
         {
             var cart = await _context.Carts
                 .Include(c => c.CartItems)
-                .FirstOrDefaultAsync(c => c.Id == cartId && c.UserId == userId);
+                .FirstOrDefaultAsync(c => c.Id == cartId);
 
             if (cart == null) return false;
 
@@ -85,13 +74,13 @@ namespace LVTN_BE_COFFE.Domain.Services
                 ProductPrice = i.UnitPrice,
                 Quantity = i.Quantity,
                 Subtotal = i.CalculatedSubtotal,
-                AddedAt = i.AddedAt
             }).ToList() ?? new List<CartItemResponse>();
 
             return new CartResponse
             {
                 CartId = cart.Id,
                 UserId = cart.UserId,
+                GuestKey = cart.GuestKey,
                 UserName = cart.User?.UserName,
                 Status = cart.Status,
                 TotalPrice = items.Sum(i => i.Subtotal),

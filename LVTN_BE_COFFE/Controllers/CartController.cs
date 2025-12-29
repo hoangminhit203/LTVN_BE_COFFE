@@ -2,65 +2,67 @@
 using LVTN_BE_COFFE.Domain.VModel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Threading.Tasks;
 
 namespace LVTN_BE_COFFE.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    [AllowAnonymous]
     public class CartController : ControllerBase
     {
         private readonly ICartService _cartService;
-        public CartController(ICartService cartService)
+        private readonly AppDbContext _context;
+        public CartController(ICartService cartService,AppDbContext context)
         {
             _cartService = cartService;
+            _context = context;
         }
-
-        private string GetUserId()
+        private (string? userId, string? guestKey) GetCartIdentity()
         {
-            // 1. Kiểm tra xem người dùng đã được xác thực chưa
-            if (!User.Identity.IsAuthenticated)
+            string? userId = null;
+            if (User.Identity?.IsAuthenticated == true)
             {
-                // Hoặc trả về 401/403, nhưng ném Exception theo cách cũ để khớp với lỗi của bạn
-                throw new System.Exception("User not authenticated");
+                userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value
+                         ?? User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value;
             }
 
-            // 2. Trích xuất ID từ Claim
-            // Tùy thuộc vào cách bạn tạo Token, ID có thể là ClaimTypes.NameIdentifier HOẶC JwtRegisteredClaimNames.Sub.
-            // Vì token của bạn dùng 'sub' làm ID, ta dùng nó:
-            var userId = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
-                         ?? User.Claims.FirstOrDefault(c => c.Type == System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            var guestKey = Request.Headers["X-Guest-Key"].FirstOrDefault();
 
-            if (string.IsNullOrEmpty(userId))
-            {
-                // 3. Nếu không tìm thấy, ném lỗi
-                throw new System.Exception("User ID claim not found in token.");
-            }
-
-            return userId;
+            return (userId, guestKey);
         }
 
         [HttpGet]
         public async Task<ActionResult<CartResponse>> Get()
         {
-            var userId = GetUserId();
-            var cart = await _cartService.GetCartByUserAsync(userId);
-            if (cart == null) return Ok(new { message = "Cart empty" });
+            var (userId, guestKey) = GetCartIdentity();
+
+            if (string.IsNullOrEmpty(userId) && string.IsNullOrEmpty(guestKey))
+                return BadRequest("User identification or Guest-Key is required.");
+
+            var cart = await _cartService.GetCartAsync(userId, guestKey);
+
+            if (cart == null) return Ok(new { message = "Cart empty", items = new List<object>() });
+
             return Ok(cart);
         }
 
         [HttpPost("clear")]
-        public async Task<ActionResult<CartResponse>> Clear()
+        public async Task<ActionResult> Clear()
         {
-            var userId = GetUserId();
-            var cart = await _cartService.GetCartByUserAsync(userId);
+            var (userId, guestKey) = GetCartIdentity();
+
+            var cart = await _context.Carts
+                .FirstOrDefaultAsync(c => c.Status == "Active" &&
+                    ((userId != null && c.UserId == userId) ||
+                     (guestKey != null && c.GuestKey == guestKey)));
+
             if (cart == null) return BadRequest("Cart not found");
 
-            var ok = await _cartService.ClearCartAsync(cart.CartId, userId);
-            return ok ? Ok() : StatusCode(500, "Failed to clear cart");
+            var ok = await _cartService.ClearCartAsync(cart.Id);
+            return ok ? Ok(new { message = "Cart cleared" }) : StatusCode(500, "Failed to clear cart");
         }
     }
 }

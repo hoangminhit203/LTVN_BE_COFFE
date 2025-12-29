@@ -14,18 +14,11 @@ public class CartItem : BaseEntity
     [Required]
     public int ProductVariantId { get; set; }
 
-    public string UserId { get; set; } = null!;
-
     [Required]
     public int Quantity { get; set; } = 1;
-    public DateTime AddedAt { get; set; } = DateTime.UtcNow;
 
-    // Navigation properties
     [ForeignKey(nameof(CartId))]
     public Cart Cart { get; set; } = null!;
-
-    [ForeignKey(nameof(UserId))]
-    public AspNetUsers? User { get; set; } = null!;
 
     [ForeignKey(nameof(ProductVariantId))]
     public ProductVariant ProductVariant { get; set; } = null!;

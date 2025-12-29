@@ -19,8 +19,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
-        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .WithExposedHeaders("X-Guest-Key"));
 });
+
 
 
 // Add services to the container.
@@ -114,6 +118,7 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new() { Title = "LVTN_BE_COFFE", Version = "v1" });
 
+    // 1. Cấu hình cho JWT Bearer
     c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -124,8 +129,18 @@ builder.Services.AddSwaggerGen(c =>
         Description = "Nhập 'Bearer' [space] + token. \n\nVí dụ: `Bearer abc123xyz`"
     });
 
+    // 2. THÊM MỚI: Cấu hình cho Guest Key (X-Guest-Key)
+    c.AddSecurityDefinition("GuestKey", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Name = "X-Guest-Key", // Tên header chính xác
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Description = "Nhập mã định danh Guest (ví dụ: guest-123) để test giỏ hàng không đăng nhập"
+    });
+
     c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
     {
+        // Yêu cầu cho Bearer
         {
             new Microsoft.OpenApi.Models.OpenApiSecurityScheme
             {
@@ -133,6 +148,17 @@ builder.Services.AddSwaggerGen(c =>
                 {
                     Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
                     Id = "Bearer"
+                }
+            },
+            new string[] {}
+        },
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "GuestKey"
                 }
             },
             new string[] {}
