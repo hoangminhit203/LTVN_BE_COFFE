@@ -57,5 +57,10 @@ namespace LVTN_BE_COFFE.API.Controllers
         {
             return await _categoryService.DeleteCategory(id);
         }
+        [HttpGet("{id}/products")]
+        public async Task<ActionResult<ResponseResult>> GetProductsByCategory(int id, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        {
+            return await _categoryService.GetProductsByCategoryId(id, pageNumber, pageSize);
+        }
     }
 }
