@@ -8,16 +8,24 @@ public class Order : BaseEntity
     public int OrderId { get; set; }
 
     public string? UserId { get; set; }
+    public string? GuestKey { get; set; }
+
+    [Required, StringLength(150)]
+    public string ReceiverName { get; set; } = null!;
+
+    [Required, StringLength(20)]
+    public string ReceiverPhone { get; set; } = null!;
+
+    public string? ReceiverEmail { get; set; }
+
+    [Required, StringLength(500)]
+    public string ShippingAddressSnapshot { get; set; } = null!;
 
     [Required]
-    // Đây là Tổng tiền hàng (SubTotal) = Tổng (Giá * Số lượng) của các món
     public decimal TotalAmount { get; set; }
 
-    // --- MỚI THÊM: Phí vận chuyển ---
     [Required]
     public decimal ShippingFee { get; set; } = 0;
-
-    // --- MỚI THÊM: Số tiền được giảm giá (Lưu cứng giá trị lúc đặt hàng) ---
     public decimal DiscountAmount { get; set; } = 0;
 
     [StringLength(50)]
@@ -43,9 +51,9 @@ public class Order : BaseEntity
     [ForeignKey(nameof(PromotionId))]
     public Promotion? Promotion { get; set; }
 
-    public int ShippingAddressId { get; set; }
+    public int? ShippingAddressId { get; set; }
     [ForeignKey(nameof(ShippingAddressId))]
-    public ShippingAddress ShippingAddress { get; set; }
+    public ShippingAddress? ShippingAddress { get; set; }
 
     public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
     public ICollection<Payment> Payments { get; set; } = new List<Payment>();
@@ -53,8 +61,6 @@ public class Order : BaseEntity
     [NotMapped]
     public int ItemCount => OrderItems?.Sum(i => i.Quantity) ?? 0;
 
-    // --- CẬP NHẬT: Công thức tính tổng tiền cuối cùng ---
-    // Công thức: (Tiền hàng + Tiền ship) - Tiền giảm giá
     [NotMapped]
     public decimal FinalAmount
     {

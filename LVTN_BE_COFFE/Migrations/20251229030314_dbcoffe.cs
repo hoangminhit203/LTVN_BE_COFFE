@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace LVTN_BE_COFFE.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class dbcoffe : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -77,7 +77,12 @@ namespace LVTN_BE_COFFE.Migrations
                     Content = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     AuthorId = table.Column<int>(type: "int", nullable: true),
                     PublishedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ImageUrl = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true)
+                    ImageUrl = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -91,7 +96,12 @@ namespace LVTN_BE_COFFE.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -105,7 +115,12 @@ namespace LVTN_BE_COFFE.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -122,7 +137,12 @@ namespace LVTN_BE_COFFE.Migrations
                     Email = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Subject = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
                     Message = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -135,7 +155,12 @@ namespace LVTN_BE_COFFE.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false)
+                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -153,7 +178,12 @@ namespace LVTN_BE_COFFE.Migrations
                     IsFeatured = table.Column<bool>(type: "bit", nullable: false),
                     IsOnSale = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -314,10 +344,16 @@ namespace LVTN_BE_COFFE.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    GuestKey = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false)
+                    Status = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -403,7 +439,13 @@ namespace LVTN_BE_COFFE.Migrations
                 columns: table => new
                 {
                     ProductId = table.Column<int>(type: "int", nullable: false),
-                    BrewingMethodId = table.Column<int>(type: "int", nullable: false)
+                    BrewingMethodId = table.Column<int>(type: "int", nullable: false),
+                    Id = table.Column<long>(type: "bigint", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -427,7 +469,13 @@ namespace LVTN_BE_COFFE.Migrations
                 columns: table => new
                 {
                     ProductId = table.Column<int>(type: "int", nullable: false),
-                    FlavorNoteId = table.Column<int>(type: "int", nullable: false)
+                    FlavorNoteId = table.Column<int>(type: "int", nullable: false),
+                    Id = table.Column<long>(type: "bigint", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -481,14 +529,28 @@ namespace LVTN_BE_COFFE.Migrations
                     OrderId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    GuestKey = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ReceiverName = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
+                    ReceiverPhone = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    ReceiverEmail = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ShippingAddressSnapshot = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
                     TotalAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    ShippingFee = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    DiscountAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     ShippingMethod = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     PromotionId = table.Column<int>(type: "int", nullable: true),
                     VoucherCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ShippingAddressId = table.Column<int>(type: "int", nullable: false)
+                    OrderDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ShippingAddressId = table.Column<int>(type: "int", nullable: true),
+                    Id = table.Column<long>(type: "bigint", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -508,8 +570,7 @@ namespace LVTN_BE_COFFE.Migrations
                         name: "FK_Orders_ShippingAddresses_ShippingAddressId",
                         column: x => x.ShippingAddressId,
                         principalTable: "ShippingAddresses",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -520,20 +581,17 @@ namespace LVTN_BE_COFFE.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     CartId = table.Column<int>(type: "int", nullable: false),
                     ProductVariantId = table.Column<int>(type: "int", nullable: false),
-                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Quantity = table.Column<int>(type: "int", nullable: false),
-                    AddedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UnitPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
+                    UnitPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_CartItems", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_CartItems_AspNetUsers_UserId",
-                        column: x => x.UserId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_CartItems_Carts_CartId",
                         column: x => x.CartId,
@@ -588,7 +646,12 @@ namespace LVTN_BE_COFFE.Migrations
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Rating = table.Column<float>(type: "real", nullable: false),
                     Comment = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -651,7 +714,12 @@ namespace LVTN_BE_COFFE.Migrations
                     ProductNameAtPurchase = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
                     VariantDetailsJson = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Quantity = table.Column<int>(type: "int", nullable: false),
-                    PriceAtPurchase = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
+                    PriceAtPurchase = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -758,11 +826,6 @@ namespace LVTN_BE_COFFE.Migrations
                 name: "IX_CartItems_ProductVariantId",
                 table: "CartItems",
                 column: "ProductVariantId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_CartItems_UserId",
-                table: "CartItems",
-                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Carts_UserId",

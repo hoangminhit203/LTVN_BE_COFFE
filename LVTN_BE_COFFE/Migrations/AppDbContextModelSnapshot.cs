@@ -121,6 +121,9 @@ namespace LVTN_BE_COFFE.Migrations
                     b.Property<DateTime?>("CreatedDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("GuestKey")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<bool?>("IsActive")
                         .HasColumnType("bit");
 
@@ -139,7 +142,6 @@ namespace LVTN_BE_COFFE.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("UserId")
-                        .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
@@ -156,9 +158,6 @@ namespace LVTN_BE_COFFE.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("AddedAt")
-                        .HasColumnType("datetime2");
 
                     b.Property<int>("CartId")
                         .HasColumnType("int");
@@ -187,17 +186,11 @@ namespace LVTN_BE_COFFE.Migrations
                     b.Property<DateTime?>("UpdatedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
                     b.HasKey("Id");
 
                     b.HasIndex("CartId");
 
                     b.HasIndex("ProductVariantId");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("CartItems");
                 });
@@ -684,6 +677,9 @@ namespace LVTN_BE_COFFE.Migrations
                     b.Property<decimal>("DiscountAmount")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<string>("GuestKey")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<long>("Id")
                         .HasColumnType("bigint");
 
@@ -696,8 +692,26 @@ namespace LVTN_BE_COFFE.Migrations
                     b.Property<int?>("PromotionId")
                         .HasColumnType("int");
 
-                    b.Property<int>("ShippingAddressId")
+                    b.Property<string>("ReceiverEmail")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ReceiverName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("ReceiverPhone")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int?>("ShippingAddressId")
                         .HasColumnType("int");
+
+                    b.Property<string>("ShippingAddressSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<decimal>("ShippingFee")
                         .HasColumnType("decimal(18,2)");
@@ -1219,8 +1233,7 @@ namespace LVTN_BE_COFFE.Migrations
                     b.HasOne("LVTN_BE_COFFE.Infrastructures.Entities.AspNetUsers", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("User");
                 });
@@ -1239,17 +1252,9 @@ namespace LVTN_BE_COFFE.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("LVTN_BE_COFFE.Infrastructures.Entities.AspNetUsers", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("Cart");
 
                     b.Navigation("ProductVariant");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("CategoryProduct", b =>
@@ -1338,9 +1343,7 @@ namespace LVTN_BE_COFFE.Migrations
 
                     b.HasOne("ShippingAddress", "ShippingAddress")
                         .WithMany("Orders")
-                        .HasForeignKey("ShippingAddressId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("ShippingAddressId");
 
                     b.HasOne("LVTN_BE_COFFE.Infrastructures.Entities.AspNetUsers", "User")
                         .WithMany()

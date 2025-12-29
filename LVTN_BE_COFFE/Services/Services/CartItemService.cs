@@ -21,133 +21,103 @@ namespace LVTN_BE_COFFE.Domain.Services
             _cartService = cartService;
         }
 
-        /// <summary>
-        /// Thêm sản phẩm vào cartItem của user
-        /// </summary>
-        public async Task<ActionResult<CartItemResponse>> AddItem(string userId, CartItemCreateVModel request)
+        public async Task<ActionResult<CartItemResponse>> AddItem(string? userId, string? guestKey, CartItemCreateVModel request)
         {
-            if (request == null) throw new ArgumentNullException(nameof(request));
-            if (request.Quantity <= 0) throw new ArgumentException("Quantity must be greater than 0.");
-
-            // 1) Validate variant
+            // 1) Validate biến thể sản phẩm
             var variant = await _context.ProductVariant
                 .Include(v => v.Product)
                 .FirstOrDefaultAsync(v => v.Id == request.ProductVariantId);
 
-            if (variant == null)
-                throw new InvalidOperationException("Product variant not found.");
+            if (variant == null) return new NotFoundObjectResult("Product variant not found.");
 
-            // 2) Ensure user has a cart
-            var cartResponse = await _cartService.CreateCartIfNotExistsAsync(userId);
-            var cartId = cartResponse.CartId;
+            // 2) Lấy hoặc tạo giỏ hàng dựa trên định danh
+            var cartResp = await _cartService.CreateCartIfNotExistsAsync(userId, guestKey);
 
+            // Lấy Entity Cart thực tế từ DB
             var cart = await _context.Carts
                 .Include(c => c.CartItems)
-                .ThenInclude(ci => ci.ProductVariant)
-                .FirstOrDefaultAsync(c => c.Id == cartId && c.UserId == userId);
+                .FirstOrDefaultAsync(c => c.Id == cartResp.CartId);
 
-            if (cart == null)
-                throw new InvalidOperationException("Cart not found or not owned by user.");
+            if (cart == null) return new BadRequestObjectResult("Could not initialize cart.");
 
-            using var tx = await _context.Database.BeginTransactionAsync();
-            try
+            // 3) Xử lý thêm/cập nhật item
+            var existingItem = cart.CartItems.FirstOrDefault(ci => ci.ProductVariantId == request.ProductVariantId);
+
+            if (existingItem != null)
             {
-                var existing = cart.CartItems.FirstOrDefault(ci => ci.ProductVariantId == request.ProductVariantId);
-
-                if (existing != null)
-                {
-                    // Nếu đã có trong cart, cộng dồn quantity
-                    existing.Quantity += request.Quantity;
-                    _context.CartItems.Update(existing);
-                }
-                else
-                {
-                    // Thêm mới
-                    var newItem = new CartItem
-                    {
-                        CartId = cart.Id,
-                        UserId = userId,
-                        ProductVariantId = variant.Id,
-                        ProductVariant = variant,
-                        Quantity = request.Quantity,
-                        UnitPrice = variant.Price,
-                        AddedAt = DateTime.UtcNow
-                    };
-                    await _context.CartItems.AddAsync(newItem);
-                }
-
-                // Update cart tổng
-                cart.UpdatedAt = DateTime.UtcNow;
-                _context.Carts.Update(cart);
-
-                await _context.SaveChangesAsync();
-                await tx.CommitAsync();
-
-                var item = await _context.CartItems
-                    .Include(ci => ci.ProductVariant)
-                    .ThenInclude(v => v.Product)
-                    .FirstOrDefaultAsync(ci => ci.CartId == cart.Id && ci.ProductVariantId == request.ProductVariantId);
-
-                return MapToResponse(item);
+                existingItem.Quantity += request.Quantity;
+                existingItem.UnitPrice = variant.Price; // Cập nhật giá mới nhất
+                _context.CartItems.Update(existingItem);
             }
-            catch
+            else
             {
-                await tx.RollbackAsync();
-                throw;
+                var newItem = new CartItem
+                {
+                    CartId = cart.Id,
+                    ProductVariantId = variant.Id,
+                    Quantity = request.Quantity,
+                    UnitPrice = variant.Price,
+                };
+                await _context.CartItems.AddAsync(newItem);
             }
+
+            cart.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            // Lấy lại item kèm theo thông tin Product để map response
+            var resultItem = await _context.CartItems
+                .Include(ci => ci.ProductVariant)
+                .ThenInclude(v => v.Product)
+                .FirstOrDefaultAsync(ci => ci.CartId == cart.Id && ci.ProductVariantId == variant.Id);
+
+            return MapToResponse(resultItem!);
         }
 
-        public async Task<ActionResult<IEnumerable<CartItemResponse>>> GetItemsByUserId(string userId)
+        public async Task<ActionResult<IEnumerable<CartItemResponse>>> GetItems(string? userId, string? guestKey)
         {
             var cart = await _context.Carts
                 .Include(c => c.CartItems)
-                .ThenInclude(ci => ci.ProductVariant)
-                .ThenInclude(v => v.Product)
-                .FirstOrDefaultAsync(c => c.UserId == userId && c.Status == "Active");
+                    .ThenInclude(ci => ci.ProductVariant)
+                    .ThenInclude(v => v.Product)
+                .FirstOrDefaultAsync(c => c.Status == "Active" &&
+                    ((userId != null && c.UserId == userId) || (guestKey != null && c.GuestKey == guestKey)));
 
-            if (cart == null)
-                return new List<CartItemResponse>();
+            if (cart == null) return new List<CartItemResponse>();
 
             return cart.CartItems.Select(MapToResponse).ToList();
         }
 
-        public async Task<ActionResult<bool>> RemoveItem(string userId, int cartItemId)
+        public async Task<ActionResult<bool>> RemoveItem(string? userId, string? guestKey, int cartItemId)
         {
             var item = await _context.CartItems
                 .Include(ci => ci.Cart)
-                .FirstOrDefaultAsync(ci => ci.Id == cartItemId && ci.Cart.UserId == userId);
+                .FirstOrDefaultAsync(ci => ci.Id == cartItemId &&
+                    ((userId != null && ci.Cart.UserId == userId) || (guestKey != null && ci.Cart.GuestKey == guestKey)));
 
-            if (item == null)
-                throw new InvalidOperationException("Cart item not found or does not belong to user.");
+            if (item == null) return new NotFoundObjectResult("Item not found in your cart.");
 
             _context.CartItems.Remove(item);
             item.Cart.UpdatedAt = DateTime.UtcNow;
-            _context.Carts.Update(item.Cart);
 
             await _context.SaveChangesAsync();
             return true;
         }
 
-        public async Task<ActionResult<CartItemResponse>> UpdateItem(string userId, CartItemUpdateVModel request)
+        public async Task<ActionResult<CartItemResponse>> UpdateItem(string? userId, string? guestKey, CartItemUpdateVModel request)
         {
             var item = await _context.CartItems
                 .Include(ci => ci.Cart)
                 .Include(ci => ci.ProductVariant)
                 .ThenInclude(v => v.Product)
-                .FirstOrDefaultAsync(ci => ci.Id == request.CartItemId && ci.Cart.UserId == userId);
+                .FirstOrDefaultAsync(ci => ci.Id == request.CartItemId &&
+                    ((userId != null && ci.Cart.UserId == userId) || (guestKey != null && ci.Cart.GuestKey == guestKey)));
 
-            if (item == null)
-                throw new InvalidOperationException("Cart item not found or does not belong to user.");
-            if (request.Quantity <= 0)
-                throw new ArgumentException("Quantity must be greater than 0.");
+            if (item == null) return new NotFoundObjectResult("Item not found in your cart.");
 
             item.Quantity = request.Quantity;
             item.Cart.UpdatedAt = DateTime.UtcNow;
 
-            _context.CartItems.Update(item);
-            _context.Carts.Update(item.Cart);
             await _context.SaveChangesAsync();
-
             return MapToResponse(item);
         }
 
@@ -161,7 +131,6 @@ namespace LVTN_BE_COFFE.Domain.Services
                 ProductPrice = item.UnitPrice,
                 Quantity = item.Quantity,
                 Subtotal = item.CalculatedSubtotal,
-                AddedAt = item.AddedAt
             };
         }
     }

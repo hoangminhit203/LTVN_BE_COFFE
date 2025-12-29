@@ -7,8 +7,8 @@ namespace LVTN_BE_COFFE.Domain.VModel
     public class CartResponse
     {
         public int CartId { get; set; }
-        [Required]
-        public string UserId { get; set; }= null!;
+        public string? UserId { get; set; }
+        public string? GuestKey { get; set; }
         public string? UserName { get; set; }
         public string Status { get; set; } = string.Empty;
         public decimal TotalPrice { get; set; }

@@ -1,4 +1,5 @@
-﻿using LVTN_BE_COFFE.Domain.IServices;
+﻿using DocumentFormat.OpenXml.Spreadsheet;
+using LVTN_BE_COFFE.Domain.IServices;
 using LVTN_BE_COFFE.Domain.VModel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -8,55 +9,46 @@ namespace LVTN_BE_COFFE.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    // 1. Thay [Authorize] bằng [AllowAnonymous] để Guest có thể thêm hàng
+    [AllowAnonymous]
     public class CartItemsController : ControllerBase
     {
         private readonly ICartItemService _cartItemService;
+
         public CartItemsController(ICartItemService cartItemService)
         {
             _cartItemService = cartItemService;
         }
 
-        // Trong CartItemsController.cs
-        private string GetUserId()
+        // 2. Hàm lấy danh tính linh hoạt (UserId hoặc GuestKey)
+        private (string? userId, string? guestKey) GetIdentity()
         {
-            // 1. Kiểm tra xem người dùng đã được xác thực chưa
-            if (!User.Identity.IsAuthenticated)
+            string? userId = null;
+            if (User.Identity?.IsAuthenticated == true)
             {
-                // Hoặc trả về 401/403, nhưng ném Exception theo cách cũ để khớp với lỗi của bạn
-                throw new System.Exception("User not authenticated");
+                userId = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                         ?? User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value;
             }
 
-            // 2. Trích xuất ID từ Claim
-            // Tùy thuộc vào cách bạn tạo Token, ID có thể là ClaimTypes.NameIdentifier HOẶC JwtRegisteredClaimNames.Sub.
-            // Vì token của bạn dùng 'sub' làm ID, ta dùng nó:
-            var userId = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
-                         ?? User.Claims.FirstOrDefault(c => c.Type == System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            // Lấy GuestKey từ Header
+            var guestKey = Request.Headers["X-Guest-Key"].FirstOrDefault();
 
-            if (string.IsNullOrEmpty(userId))
-            {
-                // 3. Nếu không tìm thấy, ném lỗi
-                throw new System.Exception("User ID claim not found in token.");
-            }
-
-            return userId;
+            return (userId, guestKey);
         }
-
 
         [HttpPost]
         public async Task<ActionResult<CartItemResponse>> Add([FromBody] CartItemCreateVModel model)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            var userId = GetUserId();
-            try
-            {
-                var item = await _cartItemService.AddItem(userId, model);
-                return Ok(item);
-            }
-            catch (UnauthorizedAccessException) { return Forbid(); }
-            catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
-            catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
+            var (userId, guestKey) = GetIdentity();
+
+            // Nếu không có cả 2 định danh thì không cho thêm hàng
+            if (string.IsNullOrEmpty(userId) && string.IsNullOrEmpty(guestKey))
+                return BadRequest("User identification or Guest-Key is required.");
+
+            var result = await _cartItemService.AddItem(userId, guestKey, model);
+            return result;
         }
 
         [HttpPut]
@@ -64,36 +56,31 @@ namespace LVTN_BE_COFFE.Controllers
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            var userId = GetUserId();
-            try
-            {
-                var item = await _cartItemService.UpdateItem(userId, model);
-                return Ok(item);
-            }
-            catch (UnauthorizedAccessException) { return Forbid(); }
-            catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
-            catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
+            var (userId, guestKey) = GetIdentity();
+
+            var result = await _cartItemService.UpdateItem(userId, guestKey, model);
+            return result;
         }
 
         [HttpDelete("{id:int}")]
-        public async Task<ActionResult<CartItemResponse>> Delete(int id)
+        public async Task<ActionResult<bool>> Delete(int id)
         {
-            var userId = GetUserId();
-            try
-            {
-                var ok = await _cartItemService.RemoveItem(userId, id);
-                return Ok(new { success = ok });
-            }
-            catch (UnauthorizedAccessException) { return Forbid(); }
-            catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+            var (userId, guestKey) = GetIdentity();
+
+            var result = await _cartItemService.RemoveItem(userId, guestKey, id);
+            return result;
         }
 
         [HttpGet]
-        public async Task<ActionResult<CartItemResponse>> Get()
+        public async Task<ActionResult<IEnumerable<CartItemResponse>>> Get()
         {
-            var userId = GetUserId();
-            var items = await _cartItemService.GetItemsByUserId(userId);
-            return Ok(items);
+            var (userId, guestKey) = GetIdentity();
+
+            if (string.IsNullOrEmpty(userId) && string.IsNullOrEmpty(guestKey))
+                return Ok(new List<CartItemResponse>());
+
+            var result = await _cartItemService.GetItems(userId, guestKey);
+            return result;
         }
     }
 }
