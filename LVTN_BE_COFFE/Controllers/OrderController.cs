@@ -28,14 +28,36 @@ namespace LVTN_BE_COFFE.Controllers
         private (string? userId, string? guestKey) GetIdentity()
         {
             string? userId = null;
+            
+            // Debug: Log authentication status
+            Console.WriteLine($"[DEBUG] User.Identity.IsAuthenticated: {User.Identity?.IsAuthenticated}");
+            
             if (User.Identity?.IsAuthenticated == true)
             {
+                // Log tất cả claims để debug
+                Console.WriteLine("[DEBUG] User Claims:");
+                foreach (var claim in User.Claims)
+                {
+                    Console.WriteLine($"  - {claim.Type}: {claim.Value}");
+                }
+                
                 userId = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
                          ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                
+                Console.WriteLine($"[DEBUG] Extracted UserId: {userId}");
             }
 
             // Lấy GuestKey từ Header X-Guest-Key (do Frontend gửi lên)
             var guestKey = Request.Headers["X-Guest-Key"].FirstOrDefault();
+            
+            // Debug: Log tất cả headers
+            Console.WriteLine("[DEBUG] Request Headers:");
+            foreach (var header in Request.Headers)
+            {
+                Console.WriteLine($"  - {header.Key}: {header.Value}");
+            }
+            
+            Console.WriteLine($"[DEBUG] Final - UserId: {userId}, GuestKey: {guestKey}");
 
             return (userId, guestKey);
         }
@@ -63,8 +85,18 @@ namespace LVTN_BE_COFFE.Controllers
         {
             var (userId, guestKey) = GetIdentity();
 
+            Console.WriteLine($"[DEBUG] GetMyOrders - UserId: '{userId}', GuestKey: '{guestKey}'");
+
             if (string.IsNullOrEmpty(userId) && string.IsNullOrEmpty(guestKey))
-                return Ok(new ResponseResult { IsSuccess = true, Data = new List<object>() });
+            {
+                Console.WriteLine("[WARNING] Cả UserId và GuestKey đều null/empty!");
+                return Ok(new ResponseResult 
+                { 
+                    IsSuccess = true, 
+                    Data = new List<object>(), 
+                    Message = "Không có định danh người dùng. Vui lòng đăng nhập hoặc gửi X-Guest-Key header." 
+                });
+            }
 
             return await _orderService.GetOrdersByIdentity(userId, guestKey);
         }

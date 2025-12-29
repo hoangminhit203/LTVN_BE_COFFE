@@ -22,6 +22,10 @@ namespace LVTN_BE_COFFE.Domain.VModels
     }
     public class RegisterVModel : LoginVModel
     {
+        public string UserName { get; set; } // Thêm mới
+        public string FirstName { get; set; } // Thêm mới
+        public string LastName { get; set; } // Thêm mới
+        public bool? Sex { get; set; } // Thêm mới (Có thể là string hoặc bool/enum tùy DB)
         public required string ConfirmPassword { get; set; }
     }
     public class RegisterResponse

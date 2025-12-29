@@ -120,15 +120,48 @@ public class OrderService : IOrderService
 
     public async Task<ActionResult<ResponseResult>> GetOrdersByIdentity(string? userId, string? guestKey)
     {
-        var orders = await _context.Orders
-            .Where(o => (userId != null && o.UserId == userId) || (guestKey != null && o.GuestKey == guestKey))
+        // Log input
+        Console.WriteLine($"[DEBUG] GetOrdersByIdentity - UserId: {userId}, GuestKey: {guestKey}");
+
+        var query = _context.Orders.AsQueryable();
+
+        // Sửa logic: Nếu có cả 2, lấy đơn hàng của cả 2
+        if (!string.IsNullOrEmpty(userId) && !string.IsNullOrEmpty(guestKey))
+        {
+            query = query.Where(o => o.UserId == userId || o.GuestKey == guestKey);
+        }
+        // Chỉ có userId
+        else if (!string.IsNullOrEmpty(userId))
+        {
+            query = query.Where(o => o.UserId == userId);
+        }
+        // Chỉ có guestKey
+        else if (!string.IsNullOrEmpty(guestKey))
+        {
+            query = query.Where(o => o.GuestKey == guestKey);
+        }
+        else
+        {
+            // Không có định danh, trả về rỗng
+            Console.WriteLine("[DEBUG] Không có userId hoặc guestKey");
+            return new OkObjectResult(new ResponseResult { IsSuccess = true, Data = new List<OrderResponse>() });
+        }
+
+        // Log SQL query (nếu cần)
+        var sqlQuery = query.ToQueryString();
+        Console.WriteLine($"[DEBUG] SQL Query: {sqlQuery}");
+
+        var orders = await query
             .Include(o => o.OrderItems)
                 .ThenInclude(oi => oi.ProductVariant)
-                    .ThenInclude(pv => pv.Images)
+                    .ThenInclude(pv => pv.Images) 
             .OrderByDescending(o => o.CreatedAt)
             .ToListAsync();
 
-        return new OkObjectResult(new ResponseResult { IsSuccess = true, Data = orders.Select(MapToResponse) });
+        Console.WriteLine($"[DEBUG] Tìm thấy {orders.Count} đơn hàng trong database");
+
+        var result = orders.Select(MapToResponse).ToList();
+        return new OkObjectResult(new ResponseResult { IsSuccess = true, Data = result });
     }
 
     public async Task<ActionResult<ResponseResult>> GetOrder(int orderId, string? userId, string? guestKey)
@@ -214,11 +247,15 @@ public class OrderService : IOrderService
             Status = order.Status,
             CreatedAt = order.CreatedAt,
             ItemCount = order.OrderItems.Count,
+            // Thêm các field còn thiếu
+            ShippingMethod = order.ShippingMethod,
+            VoucherCode = order.VoucherCode,
+            PromotionId = order.PromotionId,
             OrderItems = order.OrderItems.Select(oi => new OrderItemResponse
             {
                 Id = oi.Id,
                 ProductName = oi.ProductNameAtPurchase,
-                ProductVariantId=oi.ProductVariantId,
+                ProductVariantId = oi.ProductVariantId,
                 Quantity = oi.Quantity,
                 PriceAtPurchase = oi.PriceAtPurchase,
                 Subtotal = oi.PriceAtPurchase * oi.Quantity,

@@ -106,6 +106,81 @@ namespace LVTN_BE_COFFE.Domain.Services
 
             return new SuccessResponseResult(paginationResponse, "Categories retrieved successfully");
         }
+        public async Task<ActionResult<ResponseResult>> GetProductsByCategoryId(int categoryId, int pageNumber = 1, int pageSize = 10)
+        {
+            // 1. Kiểm tra Category có tồn tại không (BỎ CHECK IsActive nếu cần)
+            var category = await _context.Categories
+                .Include(c => c.Products)
+                .FirstOrDefaultAsync(c => c.Id == categoryId); // ⭐ BỎ && c.IsActive == true
+
+            if (category == null)
+                return new ErrorResponseResult("Category not found");
+
+            // 2. Lấy danh sách productIds từ category (BỎ CHECK IsActive)
+            var productIds = category.Products
+                .Select(p => p.Id) // ⭐ BỎ .Where(p => p.IsActive == true)
+                .ToList();
+
+            if (!productIds.Any())
+            {
+                return new SuccessResponseResult(new
+                {
+                    TotalRecords = 0,
+                    TotalPages = 0,
+                    CurrentPage = pageNumber,
+                    PageSize = pageSize,
+                    Records = new List<object>()
+                }, "No products found in this category");
+            }
+
+            // 3. Query sản phẩm dựa trên productIds (BỎ CHECK IsActive)
+            var query = _context.Products
+                .Include(p => p.Variants)
+                .Include(p => p.Images)
+                .Where(p => productIds.Contains(p.Id)); // ⭐ BỎ && p.IsActive == true
+
+            // 4. Phân trang
+            var totalCount = await query.CountAsync();
+            var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+
+            // 5. Lấy dữ liệu và Map
+            var items = await query
+                .OrderByDescending(p => p.CreatedAt)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .Select(p => new
+                {
+                    ProductId = p.Id,
+                    Name = p.Name,
+                    Description = p.Description,
+                    // Lấy giá thấp nhất từ các variant có stock > 0
+                    Price = p.Variants.Any(v => v.Stock > 0)
+                        ? p.Variants.Where(v => v.Stock > 0).Min(v => v.Price)
+                        : (p.Variants.Any() ? p.Variants.Min(v => v.Price) : 0),
+                    // ⭐ Lấy SKU của variant có giá thấp nhất (cùng logic với Price)
+                    Sku = p.Variants.Any(v => v.Stock > 0)
+                        ? p.Variants.Where(v => v.Stock > 0).OrderBy(v => v.Price).First().Sku
+                        : (p.Variants.Any() ? p.Variants.OrderBy(v => v.Price).First().Sku : null),
+                    ImageUrl = p.Images.Any()
+                        ? p.Images.OrderBy(i => i.SortOrder).First().ImageUrl
+                        : null,
+                    IsFeatured = p.IsFeatured,
+                    IsOnSale = p.IsOnSale
+                })
+                .ToListAsync();
+
+            // 6. Trả về kết quả
+            var paginationResponse = new
+            {
+                TotalRecords = totalCount,
+                TotalPages = totalPages,
+                CurrentPage = pageNumber,
+                PageSize = pageSize,
+                Records = items
+            };
+
+            return new SuccessResponseResult(paginationResponse, "Products retrieved successfully");
+        }
 
         // Map entity → response
         private static CategoryResponse MapToResponse(Category x)
