@@ -111,16 +111,26 @@ namespace LVTN_BE_COFFE.Services.Services
                 UpdatedDate = entity.UpdatedDate,
                 IsActive = entity.IsActive,
             };
-
         private Expression<Func<AspNetRoles, bool>> BuildQueryable(AspNetRolesFilterParams fParams)
         {
             return x =>
-                (fParams.Name == null || (x.Name != null && x.Name.Contains(fParams.Name))) &&
-                (fParams.CreatedDate == null || (x.CreatedDate != null && x.CreatedDate.Value.Year.Equals(fParams.CreatedDate.Value.Year) && x.CreatedDate.Value.Month.Equals(fParams.CreatedDate.Value.Month) && x.CreatedDate.Value.Day.Equals(fParams.CreatedDate.Value.Day))) &&
-                (fParams.CreatedBy == null || (x.CreatedBy != null && x.CreatedBy.Contains(fParams.CreatedBy))) &&
-                (fParams.UpdatedDate == null || (x.UpdatedDate != null && x.UpdatedDate.Value.Year.Equals(fParams.UpdatedDate.Value.Year) && x.UpdatedDate.Value.Month.Equals(fParams.UpdatedDate.Value.Month) && x.UpdatedDate.Value.Day.Equals(fParams.UpdatedDate.Value.Day))) &&
-                (fParams.UpdatedBy == null || (x.UpdatedBy != null && x.UpdatedBy.Contains(fParams.UpdatedBy))) &&
-                (fParams.IsActive == null || x.IsActive == fParams.IsActive);
+                // 1. Lọc theo Name (Giữ nguyên)
+                (string.IsNullOrEmpty(fParams.Name) || (x.Name != null && x.Name.Contains(fParams.Name))) &&
+
+                // 2. Lọc CreatedBy (Giữ nguyên - Code bạn đã sửa đúng)
+                (string.IsNullOrEmpty(fParams.CreatedBy) || (x.CreatedBy != null && x.CreatedBy.Contains(fParams.CreatedBy))) &&
+
+                // 3. Lọc UpdatedBy (Giữ nguyên)
+                (string.IsNullOrEmpty(fParams.UpdatedBy) || (x.UpdatedBy != null && x.UpdatedBy.Contains(fParams.UpdatedBy))) &&
+
+                // 4. Lọc CreatedDate (SỬA: Chỉ so sánh khi trong DB có dữ liệu)
+                (!fParams.CreatedDate.HasValue || (x.CreatedDate.HasValue && x.CreatedDate.Value.Date == fParams.CreatedDate.Value.Date)) &&
+
+                // 5. Lọc UpdatedDate (QUAN TRỌNG: Admin đang bị chết ở đây)
+                (!fParams.UpdatedDate.HasValue || (x.UpdatedDate.HasValue && x.UpdatedDate.Value.Date == fParams.UpdatedDate.Value.Date)) &&
+
+                // 6. IsActive
+                (!fParams.IsActive.HasValue || x.IsActive == fParams.IsActive);
         }
-    }
+            }
 }

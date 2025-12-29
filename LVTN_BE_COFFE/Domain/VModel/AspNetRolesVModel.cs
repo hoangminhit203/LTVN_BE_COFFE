@@ -11,6 +11,7 @@ namespace LVTN_BE_COFFE.Domain.VModel
 
     public class AspNetRolesCreateVModel : AspNetRolesVModel
     {
+
     }
 
     public class AspNetRolesUpdateVModel : AspNetRolesVModel

@@ -50,9 +50,20 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Identity
-builder.Services.AddIdentity<AspNetUsers, AspNetRoles>()
-    .AddEntityFrameworkStores<AppDbContext>()
-    .AddDefaultTokenProviders();
+builder.Services.AddIdentity<AspNetUsers, AspNetRoles>(options =>
+{
+    // 1. Tắt yêu cầu phải xác thực email mới được đăng nhập
+    options.SignIn.RequireConfirmedAccount = false;
+
+    // 2. Cấu hình password (Tùy chọn: nới lỏng để dễ test)
+    options.Password.RequireDigit = false; // Không bắt buộc số
+    options.Password.RequireLowercase = false; // Không bắt buộc chữ thường
+    options.Password.RequireNonAlphanumeric = false; // Không bắt buộc ký tự đặc biệt (@, #...)
+    options.Password.RequireUppercase = false; // Không bắt buộc chữ hoa
+    options.Password.RequiredLength = 6; // Độ dài tối thiểu
+})
+.AddEntityFrameworkStores<AppDbContext>()
+.AddDefaultTokenProviders();
 //DEPENDENCY INJECTION
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 //builder.Services.AddSingleton<DeviceDetectionService>();

@@ -45,17 +45,32 @@ namespace LVTN_BE_COFFE.Services.Services
 
         public async Task<ResponseResult> Login(LoginVModel model)
         {
+            // 1. Tìm user bằng Email (hoặc UserName tùy bạn quy định login bằng gì)
+            // Lưu ý: Nếu model.Email gửi lên là UserName thì phải dùng FindByNameAsync
             var user = await _userManager.FindByEmailAsync(model.Email);
-
-            if (user != null && user.IsActive == true && user.EmailConfirmed ==true)
+            if (user == null)
             {
+                // Thử tìm bằng UserName nếu tìm email ko thấy (đề phòng user nhập username)
+                user = await _userManager.FindByNameAsync(model.Email);
+            }
+
+            // 2. Bỏ check 'user.EmailConfirmed == true' nếu bạn chưa làm tính năng gửi mail active
+            if (user != null && user.IsActive == true)
+            {
+                // Check Password
                 if (await _userManager.CheckPasswordAsync(user, model.Password))
                 {
+                    // --- BƯỚC QUAN TRỌNG: LẤY ROLE ---
+                    var userRoles = await _userManager.GetRolesAsync(user);
+                    // ----------------------------------
+
+                    // Gọi hàm tạo Token (Bạn cần sửa hàm này để nhận thêm List roles)
                     var token = GenerateToken.GenerateTokenJWT(
                         _configuration,
                         user.Id,
                         user.Email,
-                        user.UserName
+                        user.UserName,
+                        userRoles // 
                     );
 
                     var loginResponse = new LoginResponse
@@ -77,7 +92,7 @@ namespace LVTN_BE_COFFE.Services.Services
                     return new ResponseResult
                     {
                         IsSuccess = false,
-                        Message = Messages.InValidPasswword
+                        Message = "Mật khẩu không đúng" // Messages.InValidPasswword
                     };
                 }
             }
@@ -86,7 +101,7 @@ namespace LVTN_BE_COFFE.Services.Services
                 return new ResponseResult
                 {
                     IsSuccess = false,
-                    Message = Messages.InActiveAccount
+                    Message = "Tài khoản đang bị khóa" // Messages.InActiveAccount
                 };
             }
             else
@@ -94,11 +109,10 @@ namespace LVTN_BE_COFFE.Services.Services
                 return new ResponseResult
                 {
                     IsSuccess = false,
-                    Message = Messages.NotFoundEmail
+                    Message = "Tài khoản không tồn tại" // Messages.NotFoundEmail
                 };
             }
         }
-
         public async Task<ResponseResult> Me()
         {
             var user = await _userManager.FindByIdAsync(GlobalUserId);

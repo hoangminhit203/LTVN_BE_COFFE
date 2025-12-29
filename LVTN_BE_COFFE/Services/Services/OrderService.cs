@@ -249,8 +249,8 @@ public class OrderService : IOrderService
             ItemCount = order.OrderItems.Count,
             // Thêm các field còn thiếu
             ShippingMethod = order.ShippingMethod,
-            VoucherCode = order.VoucherCode,
-            PromotionId = order.PromotionId,
+            //VoucherCode = order.VoucherCode,
+            //PromotionId = order.PromotionId,
             OrderItems = order.OrderItems.Select(oi => new OrderItemResponse
             {
                 Id = oi.Id,

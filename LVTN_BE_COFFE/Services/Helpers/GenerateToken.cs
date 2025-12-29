@@ -9,24 +9,46 @@ namespace LVTN_BE_COFFE.Services.Helpers
 {
     public class GenerateToken
     {
-        public static string GenerateTokenJWT(IConfiguration configuration, string userId, string? email, string? userName)
+        public static string GenerateTokenJWT(IConfiguration configuration, string userId, string? email, string? userName, IList<string> roles = null)
         {
-            var claims = new[]
-              {
-                new Claim(JwtRegisteredClaimNames.Sub, configuration["Jwt:Subject"] ?? "JWT Login"),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                 new Claim(ClaimTypes.NameIdentifier, userId),      // ✅ đổi từ "UserId" sang ClaimTypes.NameIdentifier
-                new Claim(ClaimTypes.Email, email ?? ""),
-                new Claim(ClaimTypes.Name, userName ?? "")
-                };
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"] ?? "4335d179-a729-489c-82ec-b5ccd05a10f5"));
+            var claims = new List<Claim>
+    {
+        // Lưu ý: Key phải khớp với appsettings.json mới (JwtSettings)
+        new Claim(JwtRegisteredClaimNames.Sub, configuration["JwtSettings:Subject"] ?? "JWT Login"),
+        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+        new Claim(ClaimTypes.NameIdentifier, userId),
+        new Claim(ClaimTypes.Email, email ?? ""),
+        new Claim(ClaimTypes.Name, userName ?? "")
+    };
+
+            // 3. Logic thêm Role vào Token (QUAN TRỌNG)
+            if (roles != null)
+            {
+                foreach (var role in roles)
+                {
+                    claims.Add(new Claim(ClaimTypes.Role, role));
+                }
+            }
+
+            // 4. Lấy Key từ cấu hình mới (JwtSettings)
+            var keyString = configuration["JwtSettings:Key"];
+            var issuer = configuration["JwtSettings:Issuer"];
+            var audience = configuration["JwtSettings:Audience"];
+
+            // Lấy thời gian hết hạn từ config (hoặc mặc định 120 phút)
+            var expireMinutesStr = configuration["JwtSettings:AccessTokenExpirationMinutes"];
+            double expireMinutes = !string.IsNullOrEmpty(expireMinutesStr) ? double.Parse(expireMinutesStr) : 120;
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(keyString));
             var signIn = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
             var token = new JwtSecurityToken(
-                                configuration["Jwt:Issuer"],
-                                configuration["Jwt:Audience"],
-                                claims,
-                                expires: DateTime.UtcNow.AddMinutes(120),
-                                signingCredentials: signIn);
+                issuer: issuer,
+                audience: audience,
+                claims: claims, // Truyền List claims đã có role vào đây
+                expires: DateTime.UtcNow.AddMinutes(expireMinutes),
+                signingCredentials: signIn
+            );
 
             string tokenValue = new JwtSecurityTokenHandler().WriteToken(token);
 

@@ -17,6 +17,8 @@ namespace LVTN_BE_COFFE.Domain.VModel
     public class AspNetUsersCreateVModel : AspNetUsersVModel
     {
         public required string Password { get; set; }
+        // Thêm dòng này
+        public string? RoleName { get; set; } = "Customer";
     }
     public class AspNetUsersUpdateVModel : AspNetUsersVModel
     {
