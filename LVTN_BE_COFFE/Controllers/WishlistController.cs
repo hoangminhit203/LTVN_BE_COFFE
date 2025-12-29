@@ -44,6 +44,15 @@ namespace LVTN_BE_COFFE.Controllers
             var wishlistItem = await _wishlistService.AddToWishlist(userId, model);
             return Ok(wishlistItem);
         }
+        [HttpPost]
+        [Route("add-multiple")]
+        public async Task<ActionResult<List<WishlistResponseVModel>>> AddMultipleToWishlist(int wishlistId)
+        {
+            var userId = GetUserId();
+            var wishlistItems = await _wishlistService.AddToCard(userId, wishlistId);
+            return Ok(wishlistItems);
+        }
+
         [HttpDelete("{wishlistId}")]
         public async Task<ActionResult> RemoveFromWishlist(int wishlistId)
         {

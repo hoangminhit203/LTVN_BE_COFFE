@@ -47,7 +47,7 @@ namespace LVTN_BE_COFFE.Services.Services
         {
             var user = await _userManager.FindByEmailAsync(model.Email);
 
-            if (user != null && user.IsActive == true)
+            if (user != null && user.IsActive == true && user.EmailConfirmed ==true)
             {
                 if (await _userManager.CheckPasswordAsync(user, model.Password))
                 {

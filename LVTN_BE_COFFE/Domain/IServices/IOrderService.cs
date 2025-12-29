@@ -11,5 +11,6 @@ namespace LVTN_BE_COFFE.Domain.IServices
         Task<ActionResult<ResponseResult>> GetOrder(int orderId, string? userId, string? guestKey);
         Task<ActionResult<ResponseResult>> UpdateOrderStatus(int orderId, string status);
         Task<ActionResult<ResponseResult>> CancelOrder(int orderId, string? userId, string? guestKey);
+        Task<ActionResult<ResponseResult>> GetAllOrder();
     }
 }

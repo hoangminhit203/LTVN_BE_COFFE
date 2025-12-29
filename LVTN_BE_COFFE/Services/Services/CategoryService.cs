@@ -15,7 +15,7 @@ namespace LVTN_BE_COFFE.Domain.Services
             _context = context;
         }
 
-        // ✅ Create
+        // Create
         public async Task<ActionResult<ResponseResult>?> CreateCategory(CategoryCreateVModel request)
         {
             var category = new Category
@@ -32,7 +32,7 @@ namespace LVTN_BE_COFFE.Domain.Services
             return new SuccessResponseResult(MapToResponse(category), "Category created successfully");
         }
 
-        // ✅ Update
+        // Update
         public async Task<ActionResult<ResponseResult>?> UpdateCategory(CategoryUpdateVModel request, int id)
         {
             var category = await _context.Categories.FindAsync(id);
@@ -49,7 +49,7 @@ namespace LVTN_BE_COFFE.Domain.Services
             return new SuccessResponseResult(MapToResponse(category), "Category updated successfully");
         }
 
-        // ✅ Soft Delete (Set IsActive to false)
+        // Soft Delete (Set IsActive to false)
         public async Task<ActionResult<ResponseResult>> DeleteCategory(int id)
         {
             var category = await _context.Categories.FindAsync(id);
@@ -64,7 +64,7 @@ namespace LVTN_BE_COFFE.Domain.Services
             return new SuccessResponseResult(true, "Category deleted successfully");
         }
 
-        // ✅ Get by ID (only active)
+        // Get by ID (only active)
         public async Task<ActionResult<ResponseResult>?> GetCategory(int id)
         {
             var category = await _context.Categories
@@ -77,7 +77,7 @@ namespace LVTN_BE_COFFE.Domain.Services
             return new SuccessResponseResult(MapToResponse(category), "Category retrieved successfully");
         }
 
-        // ✅ Get all with pagination + filter (only active)
+        // Get all with pagination + filter (only active)
         public async Task<ActionResult<ResponseResult>> GetAllCategories(CategoryFilterVModel filter)
         {
             // Filter only active categories
@@ -182,7 +182,7 @@ namespace LVTN_BE_COFFE.Domain.Services
             return new SuccessResponseResult(paginationResponse, "Products retrieved successfully");
         }
 
-        // ✅ Map entity → response
+        // Map entity → response
         private static CategoryResponse MapToResponse(Category x)
         {
             return new CategoryResponse

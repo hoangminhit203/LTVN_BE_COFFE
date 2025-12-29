@@ -24,5 +24,6 @@ namespace LVTN_BE_COFFE.Domain.VModel
         public int Quantity { get; set; }
         public decimal PriceAtPurchase { get; set; }
         public decimal Subtotal { get; set; }
+        public string? ImageUrl { get; set; }
     }
 }

@@ -55,6 +55,43 @@ namespace LVTN_BE_COFFE.Services.Services
             return true;
         }
 
+        public async Task<ActionResult<WishlistResponseVModel>> AddToCard(string userId, int wishlistId)
+        {
+            var wishlist = await _context.Wishlists
+                .FirstOrDefaultAsync(w => w.Id == wishlistId && w.UserId == userId);
+
+            if (wishlist == null)
+                throw new Exception("Không tìm thấy sản phẩm trong danh sách yêu thích");
+
+            var cart = await _context.Carts.FirstOrDefaultAsync(c => c.UserId == userId);
+            if (cart == null)
+            {
+                cart = new Cart { UserId = userId };
+                _context.Carts.Add(cart);
+                await _context.SaveChangesAsync();
+            }
+
+            var existingItem = await _context.CartItems
+                .FirstOrDefaultAsync(ci => ci.CartId == cart.Id && ci.ProductVariantId == wishlist.ProductVariantId);
+
+            if (existingItem != null)
+            {
+                existingItem.Quantity += 1;
+            }
+            else
+            {
+                await _context.CartItems.AddAsync(new CartItem
+                {
+                    CartId = cart.Id, 
+                    ProductVariantId = wishlist.ProductVariantId,
+                    Quantity = 1
+                });
+            }
+
+            await _context.SaveChangesAsync();
+
+            return MapToWishlistResponseVModel(wishlist);
+        }
         private WishlistResponseVModel MapToWishlistResponseVModel(Wishlist wishlist)
         {
             var mainImageUrl = wishlist.ProductVariant?.Images?

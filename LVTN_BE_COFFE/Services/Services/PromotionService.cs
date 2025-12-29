@@ -53,7 +53,6 @@ namespace LVTN_BE_COFFE.Services.Services
             return promotion;
         }
 
-        // ... (Thêm logic Update và Delete tương tự) ...
 
         public Task<Promotion?> UpdatePromotionAsync(int id, PromotionUpdateVModel model)
         {
