@@ -43,16 +43,47 @@ namespace LVTN_BE_COFFE.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login(LoginRequest model)
+        [AllowAnonymous]
+        public async Task<IActionResult> Login([FromBody] LoginRequest model)
         {
+            // 1. Tìm user theo Email
             var user = await _userManager.FindByEmailAsync(model.Email);
-            if (user == null) return Unauthorized();
 
+            // Nếu không thấy User -> Trả về lỗi chung (để bảo mật)
+            if (user == null)
+            {
+                return Unauthorized("Tài khoản hoặc mật khẩu không chính xác.");
+            }
+
+            // 2. Kiểm tra mật khẩu & Trạng thái tài khoản (CheckPasswordSignInAsync)
+            // false ở cuối nghĩa là: sai pass thì chưa khóa acc ngay
             var result = await _signInManager.CheckPasswordSignInAsync(user, model.Password, false);
-            if (!result.Succeeded) return Unauthorized();
 
-            var (accessToken, refreshToken) = await _tokenService.CreateTokensAsync(user);
-            return Ok(new { accessToken, refreshToken });
+            if (result.Succeeded)
+            {
+                // 3. Đăng nhập thành công -> Tạo Token
+                var (accessToken, refreshToken) = await _tokenService.CreateTokensAsync(user);
+
+                return Ok(new
+                {
+                    accessToken = accessToken,
+                    refreshToken = refreshToken
+                });
+            }
+
+            // 4. Xử lý các lỗi cụ thể (nếu cần thiết báo cho user)
+            if (result.IsLockedOut)
+            {
+                return Unauthorized("Tài khoản đã bị khóa do đăng nhập sai nhiều lần.");
+            }
+
+            if (result.IsNotAllowed)
+            {
+                return Unauthorized("Tài khoản chưa được kích hoạt hoặc bị cấm.");
+            }
+
+            // Lỗi mặc định (sai pass)
+            return Unauthorized("Tài khoản hoặc mật khẩu không chính xác.");
         }
 
         [HttpPost("refresh")]

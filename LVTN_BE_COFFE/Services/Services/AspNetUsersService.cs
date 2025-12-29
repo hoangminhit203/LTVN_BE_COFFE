@@ -15,10 +15,13 @@ namespace LVTN_BE_COFFE.Services.Services
     {
         private readonly AppDbContext _context;
         private readonly UserManager<AspNetUsers> _userManager;
-        public AspNetUsersService(AppDbContext context, UserManager<AspNetUsers> userManager, IHttpContextAccessor contextAccessor) : base(contextAccessor)
+        private readonly RoleManager<AspNetRoles> _roleManager;
+        public AspNetUsersService(AppDbContext context, UserManager<AspNetUsers> userManager, RoleManager<AspNetRoles> roleManager, IHttpContextAccessor contextAccessor) : base(contextAccessor)
         {
+
             _context = context;
             _userManager = userManager;
+            _roleManager = roleManager;
         }
         public async Task<ActionResult<PaginationModel<AspNetUsersGetVModel>>> GetAll(AspNetUsersFilterParams parameters)
         {
@@ -56,12 +59,40 @@ namespace LVTN_BE_COFFE.Services.Services
                 CreatedBy = GlobalUserName,
                 IsActive = model.IsActive,
             };
+
+            // 1. Tạo User
             var identityResult = await _userManager.CreateAsync(entity, model.Password);
+
             if (!identityResult.Succeeded)
             {
                 var errors = string.Join("; ", identityResult.Errors.Select(e => $"{e.Code}: {e.Description}"));
                 throw new Exception("User creation failed: " + errors);
             }
+
+            // ================== SỬA LẠI ĐOẠN NÀY ==================
+
+            // 1. Lấy tên quyền từ Model gửi lên. Nếu không gửi -> mặc định là "Customer"
+            string roleToAssign = !string.IsNullOrEmpty(model.RoleName) ? model.RoleName : "Customer";
+
+            // 2. Kiểm tra quyền này đã có trong DB chưa
+            if (!await _roleManager.RoleExistsAsync(roleToAssign))
+            {
+                // Chưa có -> Tạo mới (Ví dụ: Tạo role Admin)
+                var newRole = new AspNetRoles
+                {
+                    Name = roleToAssign,
+                    NormalizedName = roleToAssign.ToUpper(),
+                    CreatedDate = DateTime.Now,
+                    CreatedBy = "System",
+                    IsActive = true
+                };
+                await _roleManager.CreateAsync(newRole);
+            }
+
+            // 3. Gán User vào quyền đó
+            await _userManager.AddToRoleAsync(entity, roleToAssign);
+
+            // ================== KẾT THÚC SỬA ==================
 
             return MapEntityToVModel(entity);
         }

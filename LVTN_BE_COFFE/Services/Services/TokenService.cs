@@ -35,44 +35,64 @@ namespace LVTN_BE_COFFE.Services.Services
 
         public async Task<(string accessToken, string refreshToken)> CreateTokensAsync(AspNetUsers user)
         {
-            // Create Claims
-            var userClaims = await _userManager.GetClaimsAsync(user);
-            var claims = new[]
-            {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Id),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(JwtRegisteredClaimNames.Email, user.Email??"")
-            }
-            .Union(userClaims);
+            // 1. Tạo danh sách Claims cơ bản (Dùng List để dễ thêm bớt)
+            var claims = new List<Claim>
+    {
+        new Claim(JwtRegisteredClaimNames.Sub, user.Id), // ID người dùng
+        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()), // ID của Token
+        new Claim(ClaimTypes.NameIdentifier, user.Id),
+        new Claim(ClaimTypes.Name, user.UserName ?? ""),
+        new Claim(ClaimTypes.Email, user.Email ?? "")
+    };
 
-            // Create signing key
+            // 2. [QUAN TRỌNG] Lấy Role từ DB và nhét vào Claims
+            var roles = await _userManager.GetRolesAsync(user);
+            foreach (var role in roles)
+            {
+                // Key mấu chốt để phân quyền Admin/Customer nằm ở đây
+                claims.Add(new Claim(ClaimTypes.Role, role));
+            }
+
+            // 3. Lấy thêm các Claim tùy chỉnh khác nếu có (Union code cũ của bạn)
+            var userClaims = await _userManager.GetClaimsAsync(user);
+            claims.AddRange(userClaims);
+
+            // 4. Tạo Key ký tên (Signing Key)
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Key));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-            // Generate Access Token
+            // 5. Cấu hình thông tin Token (Access Token)
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(claims),
+                Subject = new ClaimsIdentity(claims), // Đưa danh sách claims đã có Role vào đây
                 Expires = DateTime.UtcNow.AddMinutes(_jwtSettings.AccessTokenExpirationMinutes),
                 Issuer = _jwtSettings.Issuer,
                 Audience = _jwtSettings.Audience,
                 SigningCredentials = creds
             };
+
             var tokenHandler = new JwtSecurityTokenHandler();
             var token = tokenHandler.CreateToken(tokenDescriptor);
             var accessToken = tokenHandler.WriteToken(token);
 
-            // Generate Refresh Token
+            // 6. Tạo Refresh Token
             var refreshToken = new RefreshToken
             {
                 Id = Guid.NewGuid(),
+                // Tạo chuỗi ngẫu nhiên an toàn 64 bytes
                 Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
                 Expires = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpirationDays),
-                UserId = user.Id
+                UserId = user.Id,
+                //// Nên thêm ngày tạo để dễ quản lý
+                //CreatedDate = DateTime.UtcNow,
+                //IsRevoked = false // Mặc định là chưa bị thu hồi
             };
+
+            // 7. Lưu Refresh Token vào Database
             _dbContext.RefreshTokens.Add(refreshToken);
             await _dbContext.SaveChangesAsync();
 
+            // 8. Trả về kết quả
             return (accessToken, refreshToken.Token);
         }
 
