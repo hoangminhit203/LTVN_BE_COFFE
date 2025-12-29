@@ -45,12 +45,11 @@ namespace LVTN_BE_COFFE.Domain.VModel
         // Thông tin vận chuyển
         public string? ShippingMethod { get; set; }
         public string ShippingAddress { get; set; } = null!;
+
+        public string ReceiverName { get; set; } = null!;
+        public string ReceiverPhone { get; set; } = null!;
+        public string? ReceiverEmail { get; set; }
         public string Status { get; set; }
-
-        // Thông tin Voucher
-        public string? VoucherCode { get; set; }
-        public int? PromotionId { get; set; }
-
 
         public decimal TotalAmount { get; set; }
 

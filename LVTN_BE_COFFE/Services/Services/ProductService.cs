@@ -41,7 +41,7 @@ namespace LVTN_BE_COFFE.Services.Services
                 product.Categories.Add(category);
 
 
-                //Add Flavor Notes - Sử dụng FlavorNoteIds thay vì FlavorNotes
+                //Add Flavor Notes
                 if (request.FlavorNoteIds != null && request.FlavorNoteIds.Any())
                 {
                     // Kiểm tra các FlavorNote có tồn tại không
@@ -59,7 +59,7 @@ namespace LVTN_BE_COFFE.Services.Services
                         .ToList();
                 }
 
-                //Add Brewing Methods - Sử dụng BrewingMethodIds thay vì BrewingMethods
+                //Add Brewing Methods
                 if (request.BrewingMethodIds != null && request.BrewingMethodIds.Any())
                 {
                     // Kiểm tra các BrewingMethod có tồn tại không
@@ -139,13 +139,13 @@ namespace LVTN_BE_COFFE.Services.Services
                 product.Description = request.Description;
                 product.UpdatedAt = DateTime.UtcNow;
 
-                // 🔹 Update Categories
+                // Update Categories
                 product.Categories.Clear();
                 var category = await _context.Categories.FindAsync(request.CategoryId);
                 if (category != null)
                     product.Categories.Add(category);
 
-                // 🔹 Update Flavor Notes - Sử dụng FlavorNoteIds thay vì FlavorNotes
+                // Update Flavor Notes - Sử dụng FlavorNoteIds thay vì FlavorNotes
                 product.ProductFlavorNotes.Clear();
                 if (request.FlavorNoteIds != null && request.FlavorNoteIds.Any())
                 {
@@ -164,7 +164,7 @@ namespace LVTN_BE_COFFE.Services.Services
                         .ToList();
                 }
 
-                // 🔹 Update Brewing Methods - Sử dụng BrewingMethodIds thay vì BrewingMethods
+                // Update Brewing Methods - Sử dụng BrewingMethodIds thay vì BrewingMethods
                 product.ProductBrewingMethods.Clear();
                 if (request.BrewingMethodIds != null && request.BrewingMethodIds.Any())
                 {
@@ -183,7 +183,7 @@ namespace LVTN_BE_COFFE.Services.Services
                         .ToList();
                 }
 
-                // 🔹 Update Variants
+                // Update Variants
                 product.Variants.Clear();
 
                 if (request.Variants != null)
@@ -315,6 +315,25 @@ namespace LVTN_BE_COFFE.Services.Services
             }
         }
 
+        public async Task<ActionResult<ResponseResult>> GetProductByCategory(int categoryId)
+        {
+            try
+            {
+                var products = await _context.Products
+                    .Include(x => x.Categories)
+                    .Include(x => x.Variants).ThenInclude(v => v.Images)
+                    .Include(x => x.ProductFlavorNotes).ThenInclude(fn => fn.FlavorNote)
+                    .Include(x => x.ProductBrewingMethods).ThenInclude(bm => bm.BrewingMethod)
+                    .Where(p => p.Categories.Any(c => c.Id == categoryId))
+                    .ToListAsync();
+                var productResponses = products.Select(MapToResponse).ToList();
+                return new SuccessResponseResult(productResponses, "Lấy sản phẩm theo danh mục thành công");
+            }
+            catch (Exception ex)
+            {
+                return new ErrorResponseResult($"Lỗi khi lấy sản phẩm theo danh mục: {ex.Message}");
+            }
+        }
         private static ProductResponse MapToResponse(Product p)
         {
             return new ProductResponse

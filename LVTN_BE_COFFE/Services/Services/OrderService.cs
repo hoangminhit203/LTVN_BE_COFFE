@@ -38,7 +38,6 @@ public class OrderService : IOrderService
                 if (addr != null)
                 {
                     addressSnapshot = addr.FullAddress;
-                    // Nếu model gửi lên trống thì mới lấy từ địa chỉ mặc định
                     if (string.IsNullOrEmpty(finalReceiverName)) finalReceiverName = addr.ReceiverName;
                     if (string.IsNullOrEmpty(finalReceiverPhone)) finalReceiverPhone = addr.Phone;
                 }
@@ -50,12 +49,11 @@ public class OrderService : IOrderService
 
             if (string.IsNullOrEmpty(addressSnapshot))
                 throw new Exception("Địa chỉ giao hàng không được để trống.");
-            // ----------------------------------------------
 
-            // (Giữ nguyên logic load variants và tính tiền...)
             var variantIds = cart.Items.Select(ci => ci.ProductVariantId).ToList();
             var variants = await _context.ProductVariant
                 .Include(v => v.Product)
+                .Include(v => v.Images)
                 .Where(v => variantIds.Contains(v.Id))
                 .ToDictionaryAsync(v => v.Id);
 
@@ -75,6 +73,7 @@ public class OrderService : IOrderService
                 orderItems.Add(new OrderItem
                 {
                     ProductVariantId = variant.Id,
+                    ProductVariant = variant,
                     ProductNameAtPurchase = variant.Product.Name,
                     Quantity = ci.Quantity,
                     PriceAtPurchase = variant.Price
@@ -87,7 +86,6 @@ public class OrderService : IOrderService
                 UserId = userId,
                 GuestKey = guestKey,
 
-                // Gán dữ liệu thực tế khách vừa nhập
                 ReceiverName = finalReceiverName,
                 ReceiverPhone = finalReceiverPhone,
                 ReceiverEmail = finalReceiverEmail,
@@ -125,6 +123,8 @@ public class OrderService : IOrderService
         var orders = await _context.Orders
             .Where(o => (userId != null && o.UserId == userId) || (guestKey != null && o.GuestKey == guestKey))
             .Include(o => o.OrderItems)
+                .ThenInclude(oi => oi.ProductVariant)
+                    .ThenInclude(pv => pv.Images)
             .OrderByDescending(o => o.CreatedAt)
             .ToListAsync();
 
@@ -135,8 +135,22 @@ public class OrderService : IOrderService
     {
         var order = await _context.Orders
             .Include(o => o.OrderItems)
+                .ThenInclude(oi => oi.ProductVariant)
+                    .ThenInclude(pv => pv.Images)
             .FirstOrDefaultAsync(o => o.OrderId == orderId &&
                 ((userId != null && o.UserId == userId) || (guestKey != null && o.GuestKey == guestKey)));
+
+        if (order == null) return new NotFoundResult();
+        return new OkObjectResult(new ResponseResult { IsSuccess = true, Data = MapToResponse(order) });
+    }
+
+    public async Task<ActionResult<ResponseResult>> GetOrderAdmin(int orderId)
+    {
+        var order = await _context.Orders
+            .Include(o => o.OrderItems)
+                .ThenInclude(oi => oi.ProductVariant)
+                    .ThenInclude(pv => pv.Images)
+            .FirstOrDefaultAsync(o => o.OrderId == orderId);
 
         if (order == null) return new NotFoundResult();
         return new OkObjectResult(new ResponseResult { IsSuccess = true, Data = MapToResponse(order) });
@@ -146,12 +160,11 @@ public class OrderService : IOrderService
     {
         var order = await _context.Orders.FindAsync(orderId);
         if (order == null) return new NotFoundResult();
-
         order.Status = status;
         order.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
-        return new OkObjectResult(new ResponseResult { IsSuccess = true, Message = "Updated" });
+        return new OkObjectResult(new ResponseResult { IsSuccess = true, Message = "Updated Status Success!" });
     }
 
     public async Task<ActionResult<ResponseResult>> CancelOrder(int orderId, string? userId, string? guestKey)
@@ -174,6 +187,16 @@ public class OrderService : IOrderService
         await _context.SaveChangesAsync();
         return new OkObjectResult(new ResponseResult { IsSuccess = true, Message = "Cancelled" });
     }
+    public async Task<ActionResult<ResponseResult>> GetAllOrder()
+    {
+        var orders = await _context.Orders
+            .Include(o => o.OrderItems)
+                .ThenInclude(oi => oi.ProductVariant)
+                    .ThenInclude(pv => pv.Images)
+            .OrderByDescending(o => o.CreatedAt)
+            .ToListAsync();
+        return new OkObjectResult(new ResponseResult { IsSuccess = true, Data = orders.Select(MapToResponse) });
+    }
 
     private static OrderResponse MapToResponse(Order order)
     {
@@ -182,6 +205,9 @@ public class OrderService : IOrderService
             Id = order.OrderId,
             TotalAmount = order.TotalAmount,
             ShippingFee = order.ShippingFee,
+            ReceiverEmail = order.ReceiverEmail,
+            ReceiverName = order.ReceiverName,
+            ReceiverPhone = order.ReceiverPhone,
             DiscountAmount = order.DiscountAmount,
             FinalAmount = order.FinalAmount,
             ShippingAddress = order.ShippingAddressSnapshot,
@@ -195,7 +221,8 @@ public class OrderService : IOrderService
                 ProductVariantId=oi.ProductVariantId,
                 Quantity = oi.Quantity,
                 PriceAtPurchase = oi.PriceAtPurchase,
-                Subtotal = oi.PriceAtPurchase * oi.Quantity
+                Subtotal = oi.PriceAtPurchase * oi.Quantity,
+                ImageUrl = oi.ProductVariant?.Images.FirstOrDefault()?.ImageUrl
             }).ToList()
         };
     }
@@ -213,4 +240,5 @@ public class OrderService : IOrderService
         return 35000;
     }
 
+    
 }

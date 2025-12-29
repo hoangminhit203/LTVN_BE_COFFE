@@ -17,5 +17,6 @@ namespace LVTN_BE_COFFE.Domain.IServices
 
         /// Kiểm tra xem sản phẩm có tồn tại trong Wishlist của người dùng hay không.
         Task<bool> IsProductInWishlist(string userId, int productId);
+        Task<ActionResult<WishlistResponseVModel>> AddToCard(string userId, int wishlistId);
     }
 }

@@ -98,5 +98,11 @@ namespace LVTN_BE_COFFE.Controllers
         {
             return await _orderService.UpdateOrderStatus(id, status);
         }
+
+        [HttpGet("all")]
+        public async Task<ActionResult<ResponseResult>> GetAllOrders()
+        {
+            return await _orderService.GetAllOrder();
+        }
     }
 }

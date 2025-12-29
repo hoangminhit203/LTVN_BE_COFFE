@@ -1,6 +1,6 @@
 ﻿
 using LVTN_BE_COFFE.Domain.Model;
-using LVTN_BE_COFFE.Domain.VModel; // Nhớ sửa namespace cho đúng project bạn
+using LVTN_BE_COFFE.Domain.VModel;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -73,7 +73,7 @@ public class ShippingAddressService : IShippingAddressService
             {
                 IsSuccess = true,
                 Message = "Thêm địa chỉ thành công",
-                Data = newAddress // Hoặc map ngược lại sang ResponseVModel nếu cần
+                Data = newAddress
             });
         }
         catch (Exception ex)
