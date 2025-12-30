@@ -143,13 +143,13 @@ public class OrderService : IOrderService
         else
         {
             // Không có định danh, trả về rỗng
-            Console.WriteLine("[DEBUG] Không có userId hoặc guestKey");
+           // Console.WriteLine("[DEBUG] Không có userId hoặc guestKey");
             return new OkObjectResult(new ResponseResult { IsSuccess = true, Data = new List<OrderResponse>() });
         }
 
         // Log SQL query (nếu cần)
         var sqlQuery = query.ToQueryString();
-        Console.WriteLine($"[DEBUG] SQL Query: {sqlQuery}");
+      //  Console.WriteLine($"[DEBUG] SQL Query: {sqlQuery}");
 
         var orders = await query
             .Include(o => o.OrderItems)
@@ -158,7 +158,7 @@ public class OrderService : IOrderService
             .OrderByDescending(o => o.CreatedAt)
             .ToListAsync();
 
-        Console.WriteLine($"[DEBUG] Tìm thấy {orders.Count} đơn hàng trong database");
+       // Console.WriteLine($"[DEBUG] Tìm thấy {orders.Count} đơn hàng trong database");
 
         var result = orders.Select(MapToResponse).ToList();
         return new OkObjectResult(new ResponseResult { IsSuccess = true, Data = result });

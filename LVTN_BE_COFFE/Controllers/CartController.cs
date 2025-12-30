@@ -64,5 +64,62 @@ namespace LVTN_BE_COFFE.Controllers
             var ok = await _cartService.ClearCartAsync(cart.Id);
             return ok ? Ok(new { message = "Cart cleared" }) : StatusCode(500, "Failed to clear cart");
         }
+        [HttpGet("check-stock")]
+        public async Task<ActionResult<StockCheckResponse>> CheckStock()
+        {
+            var (userId, guestKey) = GetCartIdentity();
+
+            if (string.IsNullOrEmpty(userId) && string.IsNullOrEmpty(guestKey))
+                return BadRequest("User identification or Guest-Key is required.");
+
+            var cart = await _context.Carts
+                .Include(c => c.CartItems)
+                    .ThenInclude(ci => ci.ProductVariant)
+                        .ThenInclude(v => v.Product)
+                .FirstOrDefaultAsync(c => c.Status == "Active" &&
+                    ((userId != null && c.UserId == userId) ||
+                     (guestKey != null && c.GuestKey == guestKey)));
+
+            if (cart == null || !cart.CartItems.Any())
+            {
+                return Ok(new StockCheckResponse
+                {
+                    IsAvailable = true,
+                    Message = "Giỏ hàng trống",
+                    Items = new List<StockCheckItemResponse>()
+                });
+            }
+
+            var stockCheckItems = new List<StockCheckItemResponse>();
+            var allAvailable = true;
+
+            foreach (var item in cart.CartItems)
+            {
+                var isAvailable = item.ProductVariant.Stock >= item.Quantity;
+                if (!isAvailable) allAvailable = false;
+
+                stockCheckItems.Add(new StockCheckItemResponse
+                {
+                    CartItemId = item.Id,
+                    ProductVariantId = item.ProductVariantId,
+                    ProductName = item.ProductVariant?.Product?.Name ?? "Unknown",
+                    RequestedQuantity = item.Quantity,
+                    AvailableStock = item.ProductVariant.Stock,
+                    IsAvailable = isAvailable,
+                    Message = isAvailable
+                        ? "Sản phẩm còn hàng"
+                        : $"Chỉ còn {item.ProductVariant.Stock} sản phẩm"
+                });
+            }
+
+            return Ok(new StockCheckResponse
+            {
+                IsAvailable = allAvailable,
+                Message = allAvailable
+                    ? "Tất cả sản phẩm đều có sẵn"
+                    : "Một số sản phẩm không đủ số lượng",
+                Items = stockCheckItems
+            });
+        }
     }
 }

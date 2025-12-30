@@ -183,7 +183,7 @@ builder.Services.AddSwaggerGen(c =>
 var app = builder.Build();
 app.UseCors("AllowAll");
 // Configure the HTTP request pipeline.
-app.UseSession(); // ← Đã đúng vị trí
+app.UseSession(); //
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseHttpsRedirection();
