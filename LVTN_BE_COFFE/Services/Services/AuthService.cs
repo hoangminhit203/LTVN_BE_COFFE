@@ -289,7 +289,7 @@ namespace LVTN_BE_COFFE.Services.Services
 
             var storedOtp = _httpContextAccessor.HttpContext?.Session?.GetString("OtpCode");
             var storedExpiry = _httpContextAccessor.HttpContext?.Session?.GetString("OtpExpiry");
-            // ✅ BỎ KIỂM TRA EMAIL NẾU TEST BẰNG POSTMAN
+            //  BỎ KIỂM TRA EMAIL NẾU TEST BẰNG POSTMAN
             // var storedEmail = _httpContextAccessor.HttpContext?.Session?.GetString("RegisterEmail");
 
             if (string.IsNullOrEmpty(storedOtp))
@@ -310,7 +310,7 @@ namespace LVTN_BE_COFFE.Services.Services
                 };
             }
 
-            // ✅ BỎ KIỂM TRA NÀY KHI TEST
+            //  BỎ KIỂM TRA NÀY KHI TEST
             // if (storedEmail != email)
             // {
             //     return new ResponseResult

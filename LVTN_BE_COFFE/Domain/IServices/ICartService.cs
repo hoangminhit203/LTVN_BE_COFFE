@@ -8,5 +8,6 @@ namespace LVTN_BE_COFFE.Domain.IServices
         Task<CartResponse?> GetCartAsync(string? userId, string? guestKey);
         Task<CartResponse> CreateCartIfNotExistsAsync(string? userId, string? guestKey);
         Task<bool> ClearCartAsync(int cartId);
+        
     }
 }
