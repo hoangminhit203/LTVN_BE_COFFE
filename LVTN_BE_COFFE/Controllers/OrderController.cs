@@ -21,10 +21,6 @@ namespace LVTN_BE_COFFE.Controllers
         {
             _orderService = orderService;
         }
-
-        // ============================================================
-        // HÀM HỖ TRỢ: LẤY CẢ USER ID (TỪ TOKEN) VÀ GUEST KEY (TỪ HEADER)
-        // ============================================================
         private (string? userId, string? guestKey) GetIdentity()
         {
             string? userId = null;

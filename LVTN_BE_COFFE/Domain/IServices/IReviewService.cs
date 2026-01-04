@@ -13,7 +13,8 @@ namespace LVTN_BE_COFFE.Domain.IServices
         Task<ActionResult<PaginationModel<ReviewResponseVModel>>> GetReviewsByProductId(int productId);
 
         /// Tạo một đánh giá mới.
-        Task<ActionResult<ReviewResponseVModel>> CreateReview(ReviewCreateVModel model, string userId);
+        Task<ActionResult> SubmitReview(ReviewCreateVModel model, string userId);
+
 
         /// Cập nhật một đánh giá đã tồn tại.
         Task<ActionResult<ReviewResponseVModel>> UpdateReview(ReviewUpdateVModel model, string UserId);

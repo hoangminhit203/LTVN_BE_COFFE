@@ -8,7 +8,6 @@ namespace LVTN_BE_COFFE.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
     public class ReviewController : ControllerBase
     {
         private readonly IReviewService _reviewService;
@@ -52,7 +51,7 @@ namespace LVTN_BE_COFFE.Controllers
         public async Task<ActionResult<ReviewResponseVModel>> CreateReview([FromBody] ReviewCreateVModel model)
         {
             var userId = GetUserId();
-            var result = await _reviewService.CreateReview(model, userId);
+            var result = await _reviewService.SubmitReview(model, userId);
             return Ok(result);
         }
         // PUT: api/Review

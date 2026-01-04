@@ -108,17 +108,15 @@ namespace LVTN_BE_COFFE.Domain.Services
         }
         public async Task<ActionResult<ResponseResult>> GetProductsByCategoryId(int categoryId, int pageNumber = 1, int pageSize = 10)
         {
-            // 1. Kiểm tra Category có tồn tại không (BỎ CHECK IsActive nếu cần)
             var category = await _context.Categories
                 .Include(c => c.Products)
-                .FirstOrDefaultAsync(c => c.Id == categoryId); // ⭐ BỎ && c.IsActive == true
+                .FirstOrDefaultAsync(c => c.Id == categoryId);
 
             if (category == null)
                 return new ErrorResponseResult("Category not found");
 
-            // 2. Lấy danh sách productIds từ category (BỎ CHECK IsActive)
             var productIds = category.Products
-                .Select(p => p.Id) // ⭐ BỎ .Where(p => p.IsActive == true)
+                .Select(p => p.Id)
                 .ToList();
 
             if (!productIds.Any())
@@ -133,11 +131,10 @@ namespace LVTN_BE_COFFE.Domain.Services
                 }, "No products found in this category");
             }
 
-            // 3. Query sản phẩm dựa trên productIds (BỎ CHECK IsActive)
             var query = _context.Products
                 .Include(p => p.Variants)
                 .Include(p => p.Images)
-                .Where(p => productIds.Contains(p.Id)); // ⭐ BỎ && p.IsActive == true
+                .Where(p => productIds.Contains(p.Id));
 
             // 4. Phân trang
             var totalCount = await query.CountAsync();
@@ -148,24 +145,28 @@ namespace LVTN_BE_COFFE.Domain.Services
                 .OrderByDescending(p => p.CreatedAt)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
-                .Select(p => new
+                .Select(p => new {
+                     Product = p,
+                     PrimaryVariant = p.Variants
+                         .OrderByDescending(v => v.Stock > 0)
+                         .ThenBy(v => v.Price)
+                         .FirstOrDefault()
+                 })
+                .Select(x => new // Map ra Object cuối cùng
                 {
-                    ProductId = p.Id,
-                    Name = p.Name,
-                    Description = p.Description,
-                    // Lấy giá thấp nhất từ các variant có stock > 0
-                    Price = p.Variants.Any(v => v.Stock > 0)
-                        ? p.Variants.Where(v => v.Stock > 0).Min(v => v.Price)
-                        : (p.Variants.Any() ? p.Variants.Min(v => v.Price) : 0),
-                    // ⭐ Lấy SKU của variant có giá thấp nhất (cùng logic với Price)
-                    Sku = p.Variants.Any(v => v.Stock > 0)
-                        ? p.Variants.Where(v => v.Stock > 0).OrderBy(v => v.Price).First().Sku
-                        : (p.Variants.Any() ? p.Variants.OrderBy(v => v.Price).First().Sku : null),
-                    ImageUrl = p.Images.Any()
-                        ? p.Images.OrderBy(i => i.SortOrder).First().ImageUrl
-                        : null,
-                    IsFeatured = p.IsFeatured,
-                    IsOnSale = p.IsOnSale
+                    ProductId = x.Product.Id,
+                    Name = x.Product.Name,
+                    Description = x.Product.Description,
+                    Price = x.PrimaryVariant != null ? x.PrimaryVariant.Price : 0,
+                    Sku = x.PrimaryVariant != null ? x.PrimaryVariant.Sku : null,
+
+                    // Lấy ảnh từ Variant chính, nếu không có thì lấy ảnh của Product
+                    ImageUrl = x.PrimaryVariant != null && x.PrimaryVariant.Images.Any()
+                        ? x.PrimaryVariant.Images.FirstOrDefault().ImageUrl
+                        : (x.Product.Images.Any() ? x.Product.Images.FirstOrDefault().ImageUrl : null),
+
+                    IsFeatured = x.Product.IsFeatured,
+                    IsOnSale = x.Product.IsOnSale
                 })
                 .ToListAsync();
 
