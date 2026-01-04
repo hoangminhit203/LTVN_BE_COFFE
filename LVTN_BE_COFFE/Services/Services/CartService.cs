@@ -20,7 +20,10 @@ namespace LVTN_BE_COFFE.Domain.Services
             var cart = await _context.Carts
                 .Include(c => c.CartItems)
                     .ThenInclude(ci => ci.ProductVariant)
-                        .ThenInclude(v => v.Product)
+                        .ThenInclude(v => v.Images)
+                .Include(c => c.CartItems)
+                    .ThenInclude(ci => ci.ProductVariant)
+                        .ThenInclude(p => p.Product)
                 .Include(c => c.User)
                 .FirstOrDefaultAsync(c => c.Status == "Active" &&
                     ((userId != null && c.UserId == userId) ||
@@ -66,11 +69,14 @@ namespace LVTN_BE_COFFE.Domain.Services
 
         private static CartResponse MapToResponse(Cart cart)
         {
-            var items = cart.CartItems?.Select(i => new CartItemResponse
+            var items = cart.CartItems?.Select(static i => new CartItemResponse
             {
                 Id = i.Id,
                 ProductVariantId = i.ProductVariantId,
                 ProductName = i.ProductVariant?.Product?.Name ?? "Unknown",
+                ImageUrl = i.ProductVariant?.Images?.FirstOrDefault()?.ImageUrl // Thử lấy ảnh của Variant
+                            ?? i.ProductVariant?.Product?.Images?.FirstOrDefault()?.ImageUrl // Nếu null, thử lấy ảnh của Product
+                            ?? string.Empty,
                 ProductPrice = i.UnitPrice,
                 Quantity = i.Quantity,
                 Subtotal = i.CalculatedSubtotal,
