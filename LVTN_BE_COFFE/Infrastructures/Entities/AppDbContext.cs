@@ -27,6 +27,8 @@ public class AppDbContext : IdentityDbContext<AspNetUsers, AspNetRoles, string>
     public DbSet<SysApi> SysApis { get; set; } = null!;
 
     // Coffee Shop Entities
+
+    public DbSet<Banner> Banners { get; set; }
     public DbSet<Product> Products { get; set; }
     public DbSet<ProductVariant> ProductVariant { get; set; }
     public DbSet<FlavorNote> FlavorNotes { get; set; }
@@ -67,6 +69,12 @@ public class AppDbContext : IdentityDbContext<AspNetUsers, AspNetRoles, string>
         modelBuilder.Entity<RefreshToken>()
             .HasIndex(rt => rt.Token)
             .IsUnique();
+
+        modelBuilder.Entity<Banner>(entity =>
+        {
+            entity.HasKey(b => b.Id);
+            entity.Property(b => b.ImageUrl).HasMaxLength(500).IsRequired();
+        });
 
         modelBuilder.Entity<Product>(entity =>
         {
