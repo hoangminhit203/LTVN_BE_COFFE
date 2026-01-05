@@ -41,6 +41,30 @@ namespace LVTN_BE_COFFE.Services.Services
             return (result.SecureUrl.AbsoluteUri, result.PublicId);
         }
 
+        // Thay đổi kiểu trả về ở đây ------------------v
+        public async Task<(string Url, string PublicId)> UpdateImage(IFormFile file, string publicId)
+        {
+            if (file == null || file.Length == 0)
+                throw new ArgumentException("File không hợp lệ.");
+
+            // Xóa ảnh cũ nếu publicId được cung cấp
+            if (!string.IsNullOrEmpty(publicId))
+            {
+                var deletionParams = new DeletionParams(publicId);
+                var deletionResult = await _cloudinary.DestroyAsync(deletionParams);
+
+                if (deletionResult.Result != "ok" && deletionResult.Result != "not found")
+                    throw new Exception("Lỗi khi xóa ảnh Cloudinary: " + deletionResult.Error?.Message);
+            }
+
+            // Upload ảnh mới
+            // Giả sử hàm UploadImageAsync cũng trả về một Tuple (string, string)
+            var (newUrl, newPublicId) = await UploadImageAsync(file);
+
+            // Trả về cả 2 giá trị
+            return (newUrl, newPublicId);
+        }
+
         public async Task DeleteImageAsync(string publicId)
         {
             if (string.IsNullOrEmpty(publicId))
