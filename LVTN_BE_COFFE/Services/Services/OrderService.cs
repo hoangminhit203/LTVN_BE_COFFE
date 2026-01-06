@@ -9,11 +9,22 @@ public class OrderService : IOrderService
 {
     private readonly AppDbContext _context;
     private readonly ICartService _cartService;
+    private readonly IEmailSenderService _emailSender;
+    private readonly IConfiguration _configuration;
+    private readonly IWebHostEnvironment _env;
 
-    public OrderService(AppDbContext context, ICartService cartService)
+    public OrderService(
+        AppDbContext context,
+        ICartService cartService,
+        IEmailSenderService emailSender,
+        IConfiguration configuration,
+        IWebHostEnvironment env)
     {
         _context = context;
         _cartService = cartService;
+        _emailSender = emailSender;
+        _configuration = configuration;
+        _env = env;
     }
 
     public async Task<ActionResult<ResponseResult>> CreateOrder(string? userId, string? guestKey, OrderCreateVModel model)
@@ -30,6 +41,16 @@ public class OrderService : IOrderService
             string? finalReceiverEmail = model.ReceiverEmail;
             string addressSnapshot = "";
             int? shippingAddressId = model.ShippingAddressId;
+
+            // Nếu user đã đăng nhập và chưa có email từ form, lấy email từ database
+            if (!string.IsNullOrEmpty(userId) && string.IsNullOrEmpty(finalReceiverEmail))
+            {
+                var user = await _context.AspNetUsers.FindAsync(userId);
+                if (user != null && !string.IsNullOrEmpty(user.Email))
+                {
+                    finalReceiverEmail = user.Email;
+                }
+            }
 
             if (model.ShippingAddressId.HasValue)
             {
@@ -108,6 +129,25 @@ public class OrderService : IOrderService
 
             await _cartService.ClearCartAsync(cart.CartId);
             await transaction.CommitAsync();
+
+            // GỬI EMAIL XÁC NHẬN ĐƠN HÀNG (cho cả user đăng nhập và guest)
+            if (!string.IsNullOrEmpty(finalReceiverEmail))
+            {
+                try
+                {
+                    await SendOrderConfirmationEmail(order, finalReceiverEmail);
+                    Console.WriteLine($"[INFO] Order confirmation email sent to: {finalReceiverEmail}");
+                }
+                catch (Exception emailEx)
+                {
+                    // Log lỗi nhưng không fail toàn bộ đơn hàng
+                    Console.WriteLine($"[WARNING] Failed to send order confirmation email: {emailEx.Message}");
+                }
+            }
+            else
+            {
+                Console.WriteLine("[INFO] No email address provided, skipping order confirmation email.");
+            }
 
             return new OkObjectResult(new ResponseResult { IsSuccess = true, Data = MapToResponse(order) });
         }
@@ -229,6 +269,126 @@ public class OrderService : IOrderService
             .OrderByDescending(o => o.CreatedAt)
             .ToListAsync();
         return new OkObjectResult(new ResponseResult { IsSuccess = true, Data = orders.Select(MapToResponse) });
+    }
+
+    private async Task SendOrderConfirmationEmail(Order order, string recipientEmail)
+    {
+        var subject = $"Xác nhận đơn hàng #{order.OrderId}";
+
+        // Tạo nội dung chi tiết sản phẩm với hình ảnh
+        var orderItemsHtml = string.Join("", order.OrderItems.Select(item =>
+        {
+            var imageUrl = item.ProductVariant?.Images?.FirstOrDefault()?.ImageUrl ?? "";
+            var displayImage = !string.IsNullOrEmpty(imageUrl)
+                ? $"<img src='{imageUrl}' alt='{item.ProductNameAtPurchase}' style='width: 60px; height: 60px; object-fit: cover; border-radius: 5px;' />"
+                : "<div style='width: 60px; height: 60px; background-color: #f0f0f0; display: flex; align-items: center; justify-content: center; border-radius: 5px; font-size: 10px; color: #999;'>No Image</div>";
+
+            return $@"<tr>
+                <td style='padding: 10px; border-bottom: 1px solid #ddd;'>
+                    <div style='display: flex; align-items: center; gap: 10px;'>
+                        {displayImage}
+                        <span>{item.ProductNameAtPurchase}</span>
+                    </div>
+                </td>
+                <td style='padding: 10px; border-bottom: 1px solid #ddd; text-align: center;'>{item.Quantity}</td>
+                <td style='padding: 10px; border-bottom: 1px solid #ddd; text-align: right;'>{item.PriceAtPurchase:N0}đ</td>
+                <td style='padding: 10px; border-bottom: 1px solid #ddd; text-align: right;'>{(item.PriceAtPurchase * item.Quantity):N0}đ</td>
+            </tr>";
+        }));
+
+        var body = $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <style>
+        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+        .header {{ background-color: #6F4E37; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }}
+        .content {{ background-color: #f9f9f9; padding: 20px; }}
+        .order-info {{ background-color: white; padding: 15px; margin: 15px 0; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }}
+        .order-info h3 {{ margin-top: 0; color: #6F4E37; border-bottom: 2px solid #6F4E37; padding-bottom: 10px; }}
+        table {{ width: 100%; border-collapse: collapse; margin: 15px 0; background-color: white; }}
+        th {{ background-color: #6F4E37; color: white; padding: 12px; text-align: left; }}
+        .total {{ background-color: #6F4E37; color: white; padding: 15px; text-align: right; font-size: 18px; font-weight: bold; border-radius: 5px; margin-top: 15px; }}
+        .footer {{ text-align: center; padding: 20px; color: #666; font-size: 12px; }}
+    </style>
+</head>
+<body>
+    <div class='container'>
+        <div class='header'>
+            <h1>☕ Cảm ơn bạn đã đặt hàng!</h1>
+        </div>
+        
+        <div class='content'>
+            <div class='order-info'>
+                <h3>📋 Thông tin đơn hàng</h3>
+                <p><strong>Mã đơn hàng:</strong> {order.OrderId}</p>
+                <p><strong>Ngày đặt:</strong> {order.OrderDate:dd/MM/yyyy HH:mm}</p>
+                <p><strong>Trạng thái:</strong> <span style='color: #ff9800; font-weight: bold;'>Đang chờ xử lý</span></p>
+            </div>
+
+            <div class='order-info'>
+                <h3>👤 Thông tin người nhận</h3>
+                <p><strong>Tên người nhận:</strong> {order.ReceiverName}</p>
+                <p><strong>Số điện thoại:</strong> {order.ReceiverPhone}</p>
+                <p><strong>Địa chỉ giao hàng:</strong> {order.ShippingAddressSnapshot}</p>
+                {(!string.IsNullOrEmpty(order.ShippingMethod) ? $"<p><strong>Phương thức vận chuyển:</strong> {order.ShippingMethod}</p>" : "")}
+            </div>
+
+            <div class='order-info'>
+                <h3>🛒 Chi tiết sản phẩm</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Sản phẩm</th>
+                            <th style='text-align: center; width: 80px;'>Số lượng</th>
+                            <th style='text-align: right; width: 100px;'>Đơn giá</th>
+                            <th style='text-align: right; width: 100px;'>Thành tiền</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {orderItemsHtml}
+                        <tr>
+                            <td colspan='3' style='padding: 10px; text-align: right; font-weight: bold;'>Tạm tính:</td>
+                            <td style='padding: 10px; text-align: right; font-weight: bold;'>{order.TotalAmount:N0}đ</td>
+                        </tr>
+                        <tr>
+                            <td colspan='3' style='padding: 10px; text-align: right; font-weight: bold;'>Phí vận chuyển:</td>
+                            <td style='padding: 10px; text-align: right; font-weight: bold;'>{order.ShippingFee:N0}đ</td>
+                        </tr>
+                        {(order.DiscountAmount > 0 ? $@"
+                        <tr>
+                            <td colspan='3' style='padding: 10px; text-align: right; font-weight: bold;'>Giảm giá:</td>
+                            <td style='padding: 10px; text-align: right; color: #dc3545; font-weight: bold;'>-{order.DiscountAmount:N0}đ</td>
+                        </tr>" : "")}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class='total'>
+                TỔNG CỘNG: {order.FinalAmount:N0}đ
+            </div>
+
+            <div class='order-info'>
+                <p style='margin: 10px 0;'>📦 Đơn hàng của bạn đang được xử lý. Chúng tôi sẽ liên hệ với bạn sớm nhất!</p>
+                <p style='margin: 10px 0;'>Nếu có bất kỳ thắc mắc nào, vui lòng liên hệ: <strong style='color: #6F4E37;'>{order.ReceiverPhone}</strong></p>
+            </div>
+        </div>
+
+        <div class='footer'>
+            <p>© {DateTime.UtcNow.Year} Coffee Manager. All rights reserved.</p>
+            <p>Email này được gửi tự động, vui lòng không trả lời.</p>
+        </div>
+    </div>
+</body>
+</html>";
+
+        // Lấy thông tin email từ configuration
+        var fromEmail = _configuration["EmailSettings:FromEmail"] ?? "tranhoangngoc112@gmail.com";
+        var fromPassword = _configuration["EmailSettings:FromPassword"] ?? "mffilftdavfmvvyg";
+
+        await _emailSender.SendMailAsync(fromEmail, fromPassword, recipientEmail, subject, body);
     }
 
     private static OrderResponse MapToResponse(Order order)
