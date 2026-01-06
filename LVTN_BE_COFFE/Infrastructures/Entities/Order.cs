@@ -1,11 +1,13 @@
 ﻿using LVTN_BE_COFFE.Infrastructures.Entities;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Diagnostics.Metrics;
 
 public class Order : BaseEntity
 {
     [Key]
-    public int OrderId { get; set; }
+    [DatabaseGenerated(DatabaseGeneratedOption.None)]
+    public string OrderId { get; set; } = Guid.NewGuid().ToString();
 
     public string? UserId { get; set; }
     public string? GuestKey { get; set; }

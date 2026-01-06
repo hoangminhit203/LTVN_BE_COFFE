@@ -1,5 +1,4 @@
-﻿
-using LVTN_BE_COFFE.Domain.IServices;
+﻿using LVTN_BE_COFFE.Domain.IServices;
 using LVTN_BE_COFFE.Domain.Model;
 using LVTN_BE_COFFE.Domain.VModel;
 using LVTN_BE_COFFE.Infrastructures.Entities;
@@ -83,6 +82,7 @@ public class OrderService : IOrderService
 
             var order = new Order
             {
+                // OrderId sẽ tự động được tạo trong constructor của Order
                 UserId = userId,
                 GuestKey = guestKey,
 
@@ -143,41 +143,40 @@ public class OrderService : IOrderService
         else
         {
             // Không có định danh, trả về rỗng
-           // Console.WriteLine("[DEBUG] Không có userId hoặc guestKey");
+            // Console.WriteLine("[DEBUG] Không có userId hoặc guestKey");
             return new OkObjectResult(new ResponseResult { IsSuccess = true, Data = new List<OrderResponse>() });
         }
 
         // Log SQL query (nếu cần)
         var sqlQuery = query.ToQueryString();
-      //  Console.WriteLine($"[DEBUG] SQL Query: {sqlQuery}");
+        //  Console.WriteLine($"[DEBUG] SQL Query: {sqlQuery}");
 
         var orders = await query
             .Include(o => o.OrderItems)
                 .ThenInclude(oi => oi.ProductVariant)
-                    .ThenInclude(pv => pv.Images) 
+                    .ThenInclude(pv => pv.Images)
             .OrderByDescending(o => o.CreatedAt)
             .ToListAsync();
 
-       // Console.WriteLine($"[DEBUG] Tìm thấy {orders.Count} đơn hàng trong database");
+        // Console.WriteLine($"[DEBUG] Tìm thấy {orders.Count} đơn hàng trong database");
 
         var result = orders.Select(MapToResponse).ToList();
         return new OkObjectResult(new ResponseResult { IsSuccess = true, Data = result });
     }
 
-    public async Task<ActionResult<ResponseResult>> GetOrder(int orderId, string? userId, string? guestKey)
+    public async Task<ActionResult<ResponseResult>> GetOrder(string orderId)
     {
         var order = await _context.Orders
-            .Include(o => o.OrderItems)
-                .ThenInclude(oi => oi.ProductVariant)
-                    .ThenInclude(pv => pv.Images)
-            .FirstOrDefaultAsync(o => o.OrderId == orderId &&
-                ((userId != null && o.UserId == userId) || (guestKey != null && o.GuestKey == guestKey)));
+           .Include(o => o.OrderItems)
+               .ThenInclude(oi => oi.ProductVariant)
+                   .ThenInclude(pv => pv.Images)
+           .FirstOrDefaultAsync(o => o.OrderId == orderId);
 
         if (order == null) return new NotFoundResult();
         return new OkObjectResult(new ResponseResult { IsSuccess = true, Data = MapToResponse(order) });
     }
 
-    public async Task<ActionResult<ResponseResult>> GetOrderAdmin(int orderId)
+    public async Task<ActionResult<ResponseResult>> GetOrderAdmin(string orderId)
     {
         var order = await _context.Orders
             .Include(o => o.OrderItems)
@@ -189,7 +188,7 @@ public class OrderService : IOrderService
         return new OkObjectResult(new ResponseResult { IsSuccess = true, Data = MapToResponse(order) });
     }
 
-    public async Task<ActionResult<ResponseResult>> UpdateOrderStatus(int orderId, string status)
+    public async Task<ActionResult<ResponseResult>> UpdateOrderStatus(string orderId, string status)
     {
         var order = await _context.Orders.FindAsync(orderId);
         if (order == null) return new NotFoundResult();
@@ -200,7 +199,7 @@ public class OrderService : IOrderService
         return new OkObjectResult(new ResponseResult { IsSuccess = true, Message = "Updated Status Success!" });
     }
 
-    public async Task<ActionResult<ResponseResult>> CancelOrder(int orderId, string? userId, string? guestKey)
+    public async Task<ActionResult<ResponseResult>> CancelOrder(string orderId, string? userId, string? guestKey)
     {
         var order = await _context.Orders
             .Include(o => o.OrderItems)
@@ -209,7 +208,7 @@ public class OrderService : IOrderService
                 ((userId != null && o.UserId == userId) || (guestKey != null && o.GuestKey == guestKey)));
 
         if (order == null || order.Status != "pending")
-            return new BadRequestObjectResult("Order cannot be cancelled.");
+            return new BadRequestObjectResult(new ResponseResult { IsSuccess = false, Message = "Order cannot be cancelled." });
 
         foreach (var item in order.OrderItems)
         {
@@ -220,6 +219,7 @@ public class OrderService : IOrderService
         await _context.SaveChangesAsync();
         return new OkObjectResult(new ResponseResult { IsSuccess = true, Message = "Cancelled" });
     }
+
     public async Task<ActionResult<ResponseResult>> GetAllOrder()
     {
         var orders = await _context.Orders
@@ -276,6 +276,4 @@ public class OrderService : IOrderService
 
         return 35000;
     }
-
-    
 }

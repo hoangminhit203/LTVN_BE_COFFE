@@ -21,13 +21,14 @@ namespace LVTN_BE_COFFE.Controllers
         {
             _orderService = orderService;
         }
+
         private (string? userId, string? guestKey) GetIdentity()
         {
             string? userId = null;
-            
+
             // Debug: Log authentication status
             Console.WriteLine($"[DEBUG] User.Identity.IsAuthenticated: {User.Identity?.IsAuthenticated}");
-            
+
             if (User.Identity?.IsAuthenticated == true)
             {
                 // Log tất cả claims để debug
@@ -36,31 +37,29 @@ namespace LVTN_BE_COFFE.Controllers
                 {
                     Console.WriteLine($"  - {claim.Type}: {claim.Value}");
                 }
-                
+
                 userId = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
                          ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                
+
                 Console.WriteLine($"[DEBUG] Extracted UserId: {userId}");
             }
 
             // Lấy GuestKey từ Header X-Guest-Key (do Frontend gửi lên)
             var guestKey = Request.Headers["X-Guest-Key"].FirstOrDefault();
-            
+
             // Debug: Log tất cả headers
             Console.WriteLine("[DEBUG] Request Headers:");
             foreach (var header in Request.Headers)
             {
                 Console.WriteLine($"  - {header.Key}: {header.Value}");
             }
-            
+
             Console.WriteLine($"[DEBUG] Final - UserId: {userId}, GuestKey: {guestKey}");
 
             return (userId, guestKey);
         }
 
-        // ============================================================
         // 1. TẠO ĐƠN HÀNG MỚI
-        // ============================================================
         [HttpPost]
         public async Task<ActionResult<ResponseResult>> CreateOrder([FromBody] OrderCreateVModel model)
         {
@@ -73,9 +72,7 @@ namespace LVTN_BE_COFFE.Controllers
             return await _orderService.CreateOrder(userId, guestKey, model);
         }
 
-        // ============================================================
         // 2. LẤY LỊCH SỬ ĐƠN HÀNG
-        // ============================================================
         [HttpGet("history")]
         public async Task<ActionResult<ResponseResult>> GetMyOrders()
         {
@@ -86,51 +83,51 @@ namespace LVTN_BE_COFFE.Controllers
             if (string.IsNullOrEmpty(userId) && string.IsNullOrEmpty(guestKey))
             {
                 Console.WriteLine("[WARNING] Cả UserId và GuestKey đều null/empty!");
-                return Ok(new ResponseResult 
-                { 
-                    IsSuccess = true, 
-                    Data = new List<object>(), 
-                    Message = "Không có định danh người dùng. Vui lòng đăng nhập hoặc gửi X-Guest-Key header." 
+                return Ok(new ResponseResult
+                {
+                    IsSuccess = true,
+                    Data = new List<object>(),
+                    Message = "Không có định danh người dùng. Vui lòng đăng nhập hoặc gửi X-Guest-Key header."
                 });
             }
 
             return await _orderService.GetOrdersByIdentity(userId, guestKey);
         }
 
-        // ============================================================
         // 3. LẤY CHI TIẾT 1 ĐƠN HÀNG
-        // ============================================================
         [HttpGet("{id}")]
-        public async Task<ActionResult<ResponseResult>> GetOrderById(int id)
+        public async Task<ActionResult<ResponseResult>> GetOrderById(string id)
         {
-            var (userId, guestKey) = GetIdentity();
-            return await _orderService.GetOrder(id, userId, guestKey);
+            return await _orderService.GetOrderAdmin(id);
         }
 
-        // ============================================================
         // 4. KHÁCH HÀNG HỦY ĐƠN
-        // ============================================================
         [HttpPut("{id}/cancel")]
-        public async Task<ActionResult<ResponseResult>> CancelOrder(int id)
+        public async Task<ActionResult<ResponseResult>> CancelOrder(string id)
         {
             var (userId, guestKey) = GetIdentity();
             return await _orderService.CancelOrder(id, userId, guestKey);
         }
 
-        // ============================================================
         // 5. ADMIN/SHIPPER CẬP NHẬT TRẠNG THÁI
-        // ============================================================
         [HttpPut("{id}/status")]
         // [Authorize(Roles = "Admin,Shipper")] // Mở ra nếu bạn đã phân quyền
-        public async Task<ActionResult<ResponseResult>> UpdateStatus(int id, [FromQuery] string status)
+        public async Task<ActionResult<ResponseResult>> UpdateStatus(string id, [FromQuery] string status)
         {
             return await _orderService.UpdateOrderStatus(id, status);
         }
 
+        // 6. ADMIN LẤY TẤT CẢ ĐƠN HÀNG
         [HttpGet("all")]
         public async Task<ActionResult<ResponseResult>> GetAllOrders()
         {
             return await _orderService.GetAllOrder();
+        }
+        // 7. ADMIN LẤY CHI TIẾT ĐƠN HÀNG BẤT KỲ
+        [HttpGet("admin/{id}")]
+        public async Task<ActionResult<ResponseResult>> GetOrderByIdAdmin(string id)
+        {
+            return await _orderService.GetOrderAdmin(id);
         }
     }
 }

@@ -2,7 +2,7 @@
 using LVTN_BE_COFFE.Libraries;
 using LVTN_BE_COFFE.Domain.Model;
 using LVTN_BE_COFFE.Infrastructures.Entities;
-using Microsoft.EntityFrameworkCore; // Cần dòng này để dùng .Include()
+using Microsoft.EntityFrameworkCore; 
 
 namespace LVTN_BE_COFFE.Services.Services
 {
@@ -18,7 +18,7 @@ namespace LVTN_BE_COFFE.Services.Services
             _context = context;
         }
 
-        public string CreatePaymentUrl(PaymentInfomationModel model, HttpContext context, int OrderId)
+        public string CreatePaymentUrl(PaymentInfomationModel model, HttpContext context, string OrderId)
         {
             var timeZoneById = TimeZoneInfo.FindSystemTimeZoneById(_configuration["TimeZoneId"]);
             var timeNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, timeZoneById);
@@ -53,15 +53,14 @@ namespace LVTN_BE_COFFE.Services.Services
             // Parse OrderId từ vnp_TxnRef
             var orderId = int.TryParse(paymentResult.OrderId, out var oid) ? oid : 0;
 
-            // Truy vấn đơn hàng
-            // LƯU Ý: Đã bỏ OrderAdd và UserGuest vì không có trong Entity Order bạn gửi
+            // Fix for CS0019: Convert orderId (int) to string for comparison with Order.OrderId (string)
             var order = await _context.Orders
                 .Include(o => o.OrderItems).ThenInclude(od => od.ProductVariant).ThenInclude(pv => pv.Origin)
                 .Include(o => o.OrderItems).ThenInclude(od => od.ProductVariant).ThenInclude(pv => pv.Acidity)
                 .Include(o => o.OrderItems).ThenInclude(od => od.ProductVariant).ThenInclude(pv => pv.Weight)
                 .Include(o => o.OrderItems).ThenInclude(od => od.ProductVariant).ThenInclude(pv => pv.Certifications)
                 .Include(o => o.User)
-                .FirstOrDefaultAsync(o => o.OrderId == orderId); // SỬA: Dùng o.OrderId thay vì o.Id
+                .FirstOrDefaultAsync(o => o.OrderId == orderId.ToString());
 
             if (order == null)
                 return false;
