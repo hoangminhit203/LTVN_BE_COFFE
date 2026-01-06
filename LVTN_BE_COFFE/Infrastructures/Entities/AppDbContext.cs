@@ -49,6 +49,7 @@ public class AppDbContext : IdentityDbContext<AspNetUsers, AspNetRoles, string>
     public DbSet<Contact> Contacts { get; set; }
     public DbSet<RefreshToken> RefreshToken { get; set; }
     public DbSet<ShippingAddress> ShippingAddresses { get; set; }
+    public DbSet<OrderReturn> OrderReturns { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
