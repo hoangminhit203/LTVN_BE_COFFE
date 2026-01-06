@@ -54,6 +54,7 @@ namespace LVTN_BE_COFFE.Controllers
         {
             return await _bannerService.DeleteBannerAsync(id);
         }
+
         [HttpGet]
         [Route("active-banners")]
         public async Task<ActionResult<ResponseResult>> GetBannerIsActive()

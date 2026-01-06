@@ -124,7 +124,8 @@ namespace LVTN_BE_COFFE.Services.Services
             {
                 var product = await _context.Products
                     .Include(x => x.Categories)
-                    .Include(x => x.Variants).ThenInclude(v => v.Images)
+                    .Include(x => x.Variants)
+                        .ThenInclude(v => v.Images)
                     .Include(x => x.ProductFlavorNotes)
                     .Include(x => x.ProductBrewingMethods)
                     .FirstOrDefaultAsync(x => x.Id == id);
@@ -132,65 +133,94 @@ namespace LVTN_BE_COFFE.Services.Services
                 if (product == null)
                     return new ErrorResponseResult("Không tìm thấy sản phẩm");
 
+                // Check duplicate name
                 if (await _context.Products.AnyAsync(x => x.Name == request.Name && x.Id != id))
                     return new ErrorResponseResult("Tên sản phẩm đã tồn tại");
 
+                // ===== UPDATE BASIC INFO =====
                 product.Name = request.Name;
                 product.Description = request.Description;
                 product.UpdatedAt = DateTime.UtcNow;
 
-                // Update Categories
+                // ===== UPDATE CATEGORY (1 category) =====
                 product.Categories.Clear();
                 var category = await _context.Categories.FindAsync(request.CategoryId);
                 if (category != null)
                     product.Categories.Add(category);
 
-                // Update Flavor Notes - Sử dụng FlavorNoteIds thay vì FlavorNotes
+                // ===== UPDATE FLAVOR NOTES =====
                 product.ProductFlavorNotes.Clear();
-                if (request.FlavorNoteIds != null && request.FlavorNoteIds.Any())
+                if (request.FlavorNoteIds?.Any() == true)
                 {
-                    // Kiểm tra các FlavorNote có tồn tại không
-                    var existingFlavorNoteIds = await _context.FlavorNotes
-                        .Where(fn => request.FlavorNoteIds.Contains(fn.Id))
-                        .Select(fn => fn.Id)
+                    var flavorNoteIds = await _context.FlavorNotes
+                        .Where(x => request.FlavorNoteIds.Contains(x.Id))
+                        .Select(x => x.Id)
                         .ToListAsync();
 
-                    if (existingFlavorNoteIds.Count != request.FlavorNoteIds.Count)
+                    if (flavorNoteIds.Count != request.FlavorNoteIds.Count)
                         return new ErrorResponseResult("Một số FlavorNote không tồn tại");
 
-                    // Tạo Entity trung gian ProductFlavorNote
-                    product.ProductFlavorNotes = existingFlavorNoteIds
+                    product.ProductFlavorNotes = flavorNoteIds
                         .Select(id => new ProductFlavorNote { FlavorNoteId = id })
                         .ToList();
                 }
 
-                // Update Brewing Methods - Sử dụng BrewingMethodIds thay vì BrewingMethods
+                // ===== UPDATE BREWING METHODS =====
                 product.ProductBrewingMethods.Clear();
-                if (request.BrewingMethodIds != null && request.BrewingMethodIds.Any())
+                if (request.BrewingMethodIds?.Any() == true)
                 {
-                    // Kiểm tra các BrewingMethod có tồn tại không
-                    var existingBrewingMethodIds = await _context.BrewingMethods
-                        .Where(bm => request.BrewingMethodIds.Contains(bm.Id))
-                        .Select(bm => bm.Id)
+                    var brewingMethodIds = await _context.BrewingMethods
+                        .Where(x => request.BrewingMethodIds.Contains(x.Id))
+                        .Select(x => x.Id)
                         .ToListAsync();
 
-                    if (existingBrewingMethodIds.Count != request.BrewingMethodIds.Count)
+                    if (brewingMethodIds.Count != request.BrewingMethodIds.Count)
                         return new ErrorResponseResult("Một số BrewingMethod không tồn tại");
 
-                    // Tạo Entity trung gian ProductBrewingMethod
-                    product.ProductBrewingMethods = existingBrewingMethodIds
+                    product.ProductBrewingMethods = brewingMethodIds
                         .Select(id => new ProductBrewingMethod { BrewingMethodId = id })
                         .ToList();
                 }
 
-                // Update Variants
-                product.Variants.Clear();
+                // UPDATE VARIANTS (CORE)
+                var existingVariants = product.Variants.ToList();
 
-                if (request.Variants != null)
+                var requestVariantIds = request.Variants?
+                    .Where(v => v.Id.HasValue)
+                    .Select(v => v.Id.Value)
+                    .ToList() ?? new List<int>();
+
+                // REMOVE VARIANTS NOT IN REQUEST
+                var variantsToRemove = existingVariants
+                    .Where(v => !requestVariantIds.Contains(v.Id))
+                    .ToList();
+
+                _context.ProductVariant.RemoveRange(variantsToRemove);
+
+                // UPDATE / ADD VARIANTS
+                foreach (var v in request.Variants ?? Enumerable.Empty<ProductVariantUpdateVModel>())
                 {
-                    foreach (var v in request.Variants)
+                    if (v.Id.HasValue)
                     {
-                        var variant = new ProductVariant
+                        // UPDATE EXISTING
+                        var variant = existingVariants.FirstOrDefault(x => x.Id == v.Id.Value);
+                        if (variant == null)
+                            return new ErrorResponseResult($"Variant id {v.Id} không tồn tại");
+
+                        variant.Sku = v.Sku;
+                        variant.Price = v.Price;
+                        variant.Stock = v.Stock;
+                        variant.BeanType = v.BeanType;
+                        variant.RoastLevel = v.RoastLevel;
+                        variant.Origin = v.Origin;
+                        variant.Acidity = v.Acidity;
+                        variant.Weight = v.Weight;
+                        variant.Certifications = v.Certifications;
+                    }
+                    else
+                    {
+                        // ADD NEW VARIANT
+                        product.Variants.Add(new ProductVariant
                         {
                             Sku = v.Sku,
                             Price = v.Price,
@@ -201,29 +231,34 @@ namespace LVTN_BE_COFFE.Services.Services
                             Acidity = v.Acidity,
                             Weight = v.Weight,
                             Certifications = v.Certifications
-                        };
-
-                        product.Variants.Add(variant);
+                        });
                     }
                 }
 
                 await _context.SaveChangesAsync();
 
-                // Reload product với đầy đủ thông tin để map
+                // ===== RELOAD FOR RESPONSE =====
                 product = await _context.Products
                     .Include(x => x.Categories)
-                    .Include(x => x.Variants).ThenInclude(v => v.Images)
-                    .Include(x => x.ProductFlavorNotes).ThenInclude(fn => fn.FlavorNote)
-                    .Include(x => x.ProductBrewingMethods).ThenInclude(bm => bm.BrewingMethod)
+                    .Include(x => x.Variants)
+                        .ThenInclude(v => v.Images)
+                    .Include(x => x.ProductFlavorNotes)
+                        .ThenInclude(x => x.FlavorNote)
+                    .Include(x => x.ProductBrewingMethods)
+                        .ThenInclude(x => x.BrewingMethod)
                     .FirstOrDefaultAsync(x => x.Id == id);
 
-                return new SuccessResponseResult(MapToResponse(product), "Cập nhật sản phẩm thành công");
+                return new SuccessResponseResult(
+                    MapToResponse(product),
+                    "Cập nhật sản phẩm thành công"
+                );
             }
             catch (Exception ex)
             {
                 return new ErrorResponseResult($"Lỗi khi cập nhật sản phẩm: {ex.Message}");
             }
         }
+
 
         public async Task<ActionResult<ResponseResult>> DeleteProduct(int id)
         {

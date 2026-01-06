@@ -20,6 +20,21 @@ namespace LVTN_BE_COFFE.Domain.VModel
         public decimal? Weight { get; set; }
         public string? Certifications { get; set; }
     }
+
+    public class ProductVariantUpdateVModel
+    {
+        public int? Id { get; set; } // null = variant mới
+        public string Sku { get; set; }
+        public decimal Price { get; set; }
+        public int Stock { get; set; }
+        public string BeanType { get; set; }
+        public string RoastLevel { get; set; }
+        public string Origin { get; set; }
+        public int Acidity { get; set; }
+        public int Weight { get; set; }
+        public string Certifications { get; set; }
+    }
+
     public class ProductVariantResponse
     {
         public int VariantId { get; set; }

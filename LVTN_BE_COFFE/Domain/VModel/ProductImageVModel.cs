@@ -6,21 +6,16 @@ namespace LVTN_BE_COFFE.Domain.VModel
     public class ProductImageCreateVModel
     {
         public IFormFile? File { get; set; }
-
-        public string? ImageUrl { get; set; }
-
-        public string? PublicId { get; set; }
         public int? ProductId { get; set; }
         public int? ProductVariantId { get; set; }
-
         public bool IsMain { get; set; } = false;
         public int SortOrder { get; set; } = 0;
     }
 
-    public class ProductImageUpdateVModel : ProductImageCreateVModel
+    public class ProductImageUpdateVModel
     {
-        [Required]
-        public int Id { get; set; }
+        public IFormFile? File { get; set; }
+        public bool IsMain { get; set; } = false;
     }
 
     public class ProductImageResponse

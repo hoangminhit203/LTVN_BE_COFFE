@@ -68,15 +68,9 @@ namespace LVTN_BE_COFFE.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<ProductImageResponse>> UpdateProductImage(int id, [FromForm] ProductImageUpdateVModel model)
         {
-            // Kiểm tra tính nhất quán: ID trên URL phải khớp với ID trong body gửi lên
-            if (id != model.Id)
-            {
-                return BadRequest(new { Message = "ID trong URL và Request Body không khớp." });
-            }
-
             try
             {
-                var response = await _imageService.UpdateAsync(model);
+                var response = await _imageService.UpdateAsync(model,id);
                 return Ok(response);
             }
             catch (KeyNotFoundException ex)

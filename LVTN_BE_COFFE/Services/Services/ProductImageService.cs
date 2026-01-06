@@ -32,11 +32,6 @@ namespace LVTN_BE_COFFE.Services.Services
                 imageUrl = upload.Url;
                 publicId = upload.PublicId;
             }
-            else if (!string.IsNullOrEmpty(model.ImageUrl))
-            {
-                imageUrl = model.ImageUrl;
-                publicId = model.PublicId;
-            }
             else
             {
                 throw new InvalidOperationException("Phải cung cấp File hoặc ImageUrl.");
@@ -92,37 +87,30 @@ namespace LVTN_BE_COFFE.Services.Services
         #endregion
 
         #region Update image
-        public async Task<ProductImageResponse> UpdateAsync(ProductImageUpdateVModel model)
+        public async Task<ProductImageResponse> UpdateAsync(ProductImageUpdateVModel model, int id)
         {
-            var entity = await _context.ProductImage.FirstOrDefaultAsync(x => x.Id == model.Id);
-            if (entity == null)
-                throw new KeyNotFoundException("Không tìm thấy hình ảnh.");
-
+            string imageUrl;
+            string? publicId;
+            var img = await _context.ProductImage.FindAsync(id);
+            if (img == null)
+                throw new KeyNotFoundException("Image không tồn tại.");
             if (model.File != null)
             {
-                if (!string.IsNullOrEmpty(entity.PublicId))
-                    await _cloudinaryService.DeleteImageAsync(entity.PublicId);
-
-                var upload = await _cloudinaryService.UploadImageAsync(model.File);
-                entity.ImageUrl = upload.Url;
-                entity.PublicId = upload.PublicId;
+                var update= await _cloudinaryService.UpdateImage(model.File, img.PublicId);
+                imageUrl = update.Url;
+                publicId = update.PublicId;
             }
-            else if (!string.IsNullOrEmpty(model.ImageUrl))
+            else
             {
-                entity.ImageUrl = model.ImageUrl;
-                entity.PublicId = model.PublicId;
+                throw new InvalidOperationException("Phải cung cấp File hoặc ImageUrl.");
             }
-
-            entity.IsMain = model.IsMain;
-            entity.SortOrder = model.SortOrder;
-            entity.ProductId = model.ProductId;
-            entity.ProductVariantId = model.ProductVariantId;
-            entity.UpdatedAt = DateTime.UtcNow;
-
-            await HandleMainImageAsync(entity);
-
+            img.ImageUrl = imageUrl;
+            img.PublicId = publicId;
+            img.IsMain = model.IsMain;
+            img.UploadedAt = DateTime.UtcNow;
+            await HandleMainImageAsync(img);
             await _context.SaveChangesAsync();
-            return MapToResponse(entity);
+            return MapToResponse(img);
         }
         #endregion
 
