@@ -8,7 +8,7 @@ public class Payment
     public int Id { get; set; }
 
     [Required]
-    public int OrderId { get; set; }
+    public string OrderId { get; set; }
 
     [Required]
     public string PaymentMethod { get; set; } // ENUM: cod, bank_transfer, momo, zalopay, vnpay, credit_card

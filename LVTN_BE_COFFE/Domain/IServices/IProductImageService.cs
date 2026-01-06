@@ -7,7 +7,7 @@ public interface IProductImageService
 
     Task<List<ProductImageResponse>> AddMultipleAsync(ProductImageMultiCreateVModel model);
 
-    Task<ProductImageResponse> UpdateAsync(ProductImageUpdateVModel model);
+    Task<ProductImageResponse> UpdateAsync(ProductImageUpdateVModel model,int id);
 
     Task<bool> DeleteAsync(int id);
 

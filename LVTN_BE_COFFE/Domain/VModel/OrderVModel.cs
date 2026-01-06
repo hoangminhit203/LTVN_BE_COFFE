@@ -23,10 +23,11 @@ namespace LVTN_BE_COFFE.Domain.VModel
         public string ShippingMethod { get; set; } = "Standard";
         public string? VoucherCode { get; set; }
     }
+
     public class OrderUpdateVModel
     {
         [Required]
-        public int OrderId { get; set; }
+        public string OrderId { get; set; } = null!;
 
         [StringLength(255)]
         public string? ShippingAddress { get; set; }
@@ -40,7 +41,7 @@ namespace LVTN_BE_COFFE.Domain.VModel
 
     public class OrderResponse
     {
-        public int Id { get; set; }
+        public string Id { get; set; } = null!;
 
         // Thông tin vận chuyển
         public string? ShippingMethod { get; set; }
@@ -49,11 +50,11 @@ namespace LVTN_BE_COFFE.Domain.VModel
         public string ReceiverName { get; set; } = null!;
         public string ReceiverPhone { get; set; } = null!;
         public string? ReceiverEmail { get; set; }
-        public string Status { get; set; }
+        public string Status { get; set; } = null!;
 
         public decimal TotalAmount { get; set; }
 
-        public decimal ShippingFee { get; set; } 
+        public decimal ShippingFee { get; set; }
 
         public decimal DiscountAmount { get; set; }
 
@@ -66,30 +67,13 @@ namespace LVTN_BE_COFFE.Domain.VModel
         public List<OrderItemResponse> OrderItems { get; set; } = new();
     }
 
-    // ==========================================
-    // 4. MODEL ITEM CON (Chi tiết sản phẩm trong đơn)
-    // ==========================================
-    //public class OrderItemResponse
-    //{
-    //    public int Id { get; set; }
-    //    public int ProductVariantId { get; set; }
-    //    public string ProductName { get; set; } = string.Empty;
-    //    public int Quantity { get; set; }
-    //    public decimal PriceAtPurchase { get; set; } // Giá tại thời điểm mua
-    //    public decimal Subtotal { get; set; }        // Quantity * Price
-    //    // Có thể thêm ảnh sản phẩm vào đây để hiển thị lịch sử đẹp hơn
-    //    public string? ProductImage { get; set; }
-    //}
-
-    // ==========================================
     // 5. MODEL LỌC ĐƠN HÀNG
-    // ==========================================
     public class OrderFilterVModel
     {
-        public string? Status { get; set; }      
-        public string? Keyword { get; set; }     
-        public DateTime? FromDate { get; set; }  
-        public DateTime? ToDate { get; set; } 
+        public string? Status { get; set; }
+        public string? Keyword { get; set; }
+        public DateTime? FromDate { get; set; }
+        public DateTime? ToDate { get; set; }
 
         public string? SortBy { get; set; } = "Date";
         public bool IsAscending { get; set; } = false;

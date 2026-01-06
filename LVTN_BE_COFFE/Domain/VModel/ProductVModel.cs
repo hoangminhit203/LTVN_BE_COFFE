@@ -40,7 +40,7 @@ namespace LVTN_BE_COFFE.Domain.VModel
         public List<int>? FlavorNoteIds { get; set; }
         public List<int>? BrewingMethodIds { get; set; }
 
-        public List<ProductVariantCreateVM>? Variants { get; set; }
+        public List<ProductVariantUpdateVModel>? Variants { get; set; }
     }
 
     // ProductResponse (Loại bỏ Sku, IsActive, BranchId; thêm từ ProductAttributes và navigation)

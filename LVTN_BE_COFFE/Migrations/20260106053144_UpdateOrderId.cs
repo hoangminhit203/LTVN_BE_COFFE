@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace LVTN_BE_COFFE.Migrations
 {
     /// <inheritdoc />
-    public partial class dbcoffe : Migration
+    public partial class UpdateOrderId : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -544,8 +544,7 @@ namespace LVTN_BE_COFFE.Migrations
                 name: "Orders",
                 columns: table => new
                 {
-                    OrderId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    OrderId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     GuestKey = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     ReceiverName = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
@@ -727,7 +726,7 @@ namespace LVTN_BE_COFFE.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    OrderId = table.Column<int>(type: "int", nullable: false),
+                    OrderId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     ProductVariantId = table.Column<int>(type: "int", nullable: false),
                     ProductNameAtPurchase = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
                     VariantDetailsJson = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -762,7 +761,7 @@ namespace LVTN_BE_COFFE.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    OrderId = table.Column<int>(type: "int", nullable: false),
+                    OrderId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     PaymentMethod = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
