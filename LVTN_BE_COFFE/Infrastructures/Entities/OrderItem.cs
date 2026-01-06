@@ -8,7 +8,7 @@ public class OrderItem : BaseEntity
     public int Id { get; set; }
 
     [Required]
-    public int OrderId { get; set; }
+    public string OrderId { get; set; }
 
     [Required]
     public int ProductVariantId { get; set; }

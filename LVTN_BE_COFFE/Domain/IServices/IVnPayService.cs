@@ -6,7 +6,7 @@ namespace LVTN_BE_COFFE.Domain.IServices
 {
     public interface IVnPayService
     {
-        string CreatePaymentUrl(PaymentInfomationModel model, HttpContext context, int orderId);
+        string CreatePaymentUrl(PaymentInfomationModel model, HttpContext context, string orderId);
         Task<bool> ProcessVnPayCallbackAsync(IQueryCollection query);
     }
 }

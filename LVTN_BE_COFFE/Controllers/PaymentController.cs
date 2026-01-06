@@ -21,7 +21,7 @@ namespace LVTN_BE_COFFE.Controllers
         }
 
         [HttpPost("create-vnpay-url/{orderId}")]
-        public async Task<IActionResult> CreatePaymentUrlVnpay(int orderId)
+        public async Task<IActionResult> CreatePaymentUrlVnpay(string orderId)
         {
             var order = await _context.Orders.FindAsync(orderId);
             if (order == null)
@@ -31,7 +31,7 @@ namespace LVTN_BE_COFFE.Controllers
             // Tạo model thông tin thanh toán đơn hàng
             var paymentInfo = new PaymentInfomationModel
             {
-                OrderId = orderId,
+                OrderId = orderId.ToString(),
                 OrderType = order.Status ?? "pending",
                 Amount = (double)order.FinalAmount,
                 OrderDescription = $"Thanh toán đơn hàng #{orderId}",
