@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace LVTN_BE_COFFE.Migrations
 {
     /// <inheritdoc />
-    public partial class UpdateOrderId : Migration
+    public partial class dbcoffe : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -215,15 +215,16 @@ namespace LVTN_BE_COFFE.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     DiscountType = table.Column<int>(type: "int", nullable: false),
                     DiscountValue = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     MaxDiscountAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    MinOrderValue = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     StartDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     EndDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    MinOrderValue = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     UsageLimit = table.Column<int>(type: "int", nullable: true),
-                    ApplicableProducts = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                    UsageCount = table.Column<int>(type: "int", nullable: false),
+                    IsEnabled = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -547,6 +548,7 @@ namespace LVTN_BE_COFFE.Migrations
                     OrderId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     GuestKey = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    PromotionId = table.Column<int>(type: "int", nullable: true),
                     ReceiverName = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
                     ReceiverPhone = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     ReceiverEmail = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -556,18 +558,10 @@ namespace LVTN_BE_COFFE.Migrations
                     DiscountAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     ShippingMethod = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
-                    PromotionId = table.Column<int>(type: "int", nullable: true),
-                    VoucherCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     OrderDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ShippingAddressId = table.Column<int>(type: "int", nullable: true),
-                    Id = table.Column<long>(type: "bigint", nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: true),
-                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    ShippingAddressId = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -756,6 +750,30 @@ namespace LVTN_BE_COFFE.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "OrderReturns",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    OrderId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Reason = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ProofImages = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    AdminNote = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OrderReturns", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_OrderReturns_Orders_OrderId",
+                        column: x => x.OrderId,
+                        principalTable: "Orders",
+                        principalColumn: "OrderId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Payments",
                 columns: table => new
                 {
@@ -868,6 +886,11 @@ namespace LVTN_BE_COFFE.Migrations
                 name: "IX_OrderItems_ProductVariantId",
                 table: "OrderItems",
                 column: "ProductVariantId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrderReturns_OrderId",
+                table: "OrderReturns",
+                column: "OrderId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Orders_PromotionId",
@@ -1015,6 +1038,9 @@ namespace LVTN_BE_COFFE.Migrations
 
             migrationBuilder.DropTable(
                 name: "OrderItems");
+
+            migrationBuilder.DropTable(
+                name: "OrderReturns");
 
             migrationBuilder.DropTable(
                 name: "Payments");

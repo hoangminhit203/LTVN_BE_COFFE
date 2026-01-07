@@ -1,4 +1,5 @@
-﻿using LVTN_BE_COFFE.Domain.IServices;
+﻿using DocumentFormat.OpenXml.Spreadsheet;
+using LVTN_BE_COFFE.Domain.IServices;
 using LVTN_BE_COFFE.Domain.Model;
 using LVTN_BE_COFFE.Domain.VModel;
 using LVTN_BE_COFFE.Infrastructures.Entities;
@@ -80,6 +81,7 @@ public class OrderService : IOrderService
             var orderItems = new List<OrderItem>();
             decimal subTotalAmount = 0;
 
+            
             foreach (var ci in cart.Items)
             {
                 if (!variants.TryGetValue(ci.ProductVariantId, out var variant))
@@ -100,29 +102,66 @@ public class OrderService : IOrderService
                 });
                 subTotalAmount += (variant.Price * ci.Quantity);
             }
+            Promotion? promotion = null;
+            decimal discountAmount = 0;
+
+            if (!string.IsNullOrWhiteSpace(model.PromotionCode))
+            {
+                promotion = await _context.Promotions
+                    .FirstOrDefaultAsync(p =>
+                        p.Code == model.PromotionCode &&
+                        p.IsEnabled &&
+                        (!p.StartDate.HasValue || p.StartDate <= DateTime.Now) &&
+                        (!p.EndDate.HasValue || p.EndDate >= DateTime.Now));
+
+                if (promotion == null)
+                    throw new Exception("Mã khuyến mãi không hợp lệ hoặc đã hết hạn.");
+
+                if (promotion.MinOrderValue.HasValue &&
+                    subTotalAmount < promotion.MinOrderValue.Value)
+                    throw new Exception("Đơn hàng chưa đạt giá trị tối thiểu.");
+
+                if (promotion.UsageLimit.HasValue &&
+                    promotion.UsageCount >= promotion.UsageLimit.Value)
+                    throw new Exception("Mã khuyến mãi đã hết lượt sử dụng.");
+
+                discountAmount = promotion.DiscountType switch
+                {
+                    PromotionType.Percentage => subTotalAmount * promotion.DiscountValue / 100,
+                    PromotionType.Fixed => promotion.DiscountValue,
+                    _ => 0
+                };
+
+                if (promotion.MaxDiscountAmount.HasValue)
+                    discountAmount = Math.Min(discountAmount, promotion.MaxDiscountAmount.Value);
+
+                discountAmount = Math.Min(discountAmount, subTotalAmount);
+
+                promotion.UsageCount++;
+            }
+
 
             var order = new Order
             {
                 // OrderId sẽ tự động được tạo trong constructor của Order
                 UserId = userId,
                 GuestKey = guestKey,
-
                 ReceiverName = finalReceiverName,
                 ReceiverPhone = finalReceiverPhone,
                 ReceiverEmail = finalReceiverEmail,
-
                 ShippingAddressSnapshot = addressSnapshot,
                 ShippingAddressId = shippingAddressId,
                 Status = "pending",
-                TotalAmount = subTotalAmount,
                 ShippingFee = CalculateShippingFee(addressSnapshot),
-                DiscountAmount = 0,
-                VoucherCode = model.VoucherCode,
+                PromotionId = promotion?.Id,
+                TotalAmount = subTotalAmount,
+                DiscountAmount = discountAmount,
                 ShippingMethod = model.ShippingMethod,
                 OrderItems = orderItems,
                 CreatedAt = DateTime.UtcNow,
                 OrderDate = DateTime.Now
             };
+
 
             _context.Orders.Add(order);
             await _context.SaveChangesAsync();
@@ -157,11 +196,8 @@ public class OrderService : IOrderService
             return new BadRequestObjectResult(new ResponseResult { IsSuccess = false, Message = ex.Message });
         }
     }
-
     public async Task<ActionResult<ResponseResult>> GetOrdersByIdentity(string? userId, string? guestKey)
     {
-        // Log input
-        Console.WriteLine($"[DEBUG] GetOrdersByIdentity - UserId: {userId}, GuestKey: {guestKey}");
 
         var query = _context.Orders.AsQueryable();
 
@@ -407,10 +443,8 @@ public class OrderService : IOrderService
             Status = order.Status,
             CreatedAt = order.CreatedAt,
             ItemCount = order.OrderItems.Count,
-            // Thêm các field còn thiếu
             ShippingMethod = order.ShippingMethod,
-            //VoucherCode = order.VoucherCode,
-            //PromotionId = order.PromotionId,
+            PromotionCode = order.Promotion?.Code,
             OrderItems = order.OrderItems.Select(oi => new OrderItemResponse
             {
                 Id = oi.Id,

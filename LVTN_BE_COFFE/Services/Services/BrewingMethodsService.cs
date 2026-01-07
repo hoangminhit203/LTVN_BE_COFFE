@@ -15,7 +15,7 @@ namespace LVTN_BE_COFFE.Services.Services
             _context = context;
         }
 
-        // ✅ Create BrewingMethods
+        // Create BrewingMethods
         public async Task<ActionResult<ResponseResult>?> CreateBrewingMethods(BrewingMethodsCreateVModel request)
         {
             // Check if brewing method name already exists (case-insensitive)
@@ -41,7 +41,7 @@ namespace LVTN_BE_COFFE.Services.Services
             return new SuccessResponseResult(MapToResponse(brewingMethod), "Brewing method created successfully");
         }
 
-        // ✅ Update BrewingMethods
+        // Update BrewingMethods
         public async Task<ActionResult<ResponseResult>?> UpdateBrewingMethods(int id, BrewingMethodsUpdateVModel request)
         {
             var brewingMethod = await _context.BrewingMethods.FindAsync(id);
@@ -67,7 +67,7 @@ namespace LVTN_BE_COFFE.Services.Services
             return new SuccessResponseResult(MapToResponse(brewingMethod), "Brewing method updated successfully");
         }
 
-        // ✅ Get by ID (only active)
+        // Get by ID
         public async Task<ActionResult<ResponseResult>?> GetBrewingMethodsById(int id)
         {
             var brewingMethod = await _context.BrewingMethods
@@ -80,7 +80,7 @@ namespace LVTN_BE_COFFE.Services.Services
             return new SuccessResponseResult(MapToResponse(brewingMethod), "Brewing method retrieved successfully");
         }
 
-        // ✅ Soft Delete (Set IsActive to false)
+        // Soft Delete
         public async Task<ActionResult<ResponseResult>?> DeleteBrewingMethods(int id)
         {
             var brewingMethod = await _context.BrewingMethods.FindAsync(id);
@@ -95,7 +95,7 @@ namespace LVTN_BE_COFFE.Services.Services
             return new SuccessResponseResult(true, "Brewing method deleted successfully");
         }
 
-        // ✅ Get all with pagination + filter (only active)
+        // Get all with pagination + filter (only active)
         public async Task<ActionResult<ResponseResult>> GetAllBrewingMethods(BrewingMethodsFilterVModel filter)
         {
             // Filter only active brewing methods
@@ -125,7 +125,7 @@ namespace LVTN_BE_COFFE.Services.Services
             return new SuccessResponseResult(paginationResponse, "Brewing methods retrieved successfully");
         }
 
-        // ✅ Map entity → response
+        // Map entity → response
         private static BrewingMethodsResponse MapToResponse(BrewingMethod x)
         {
             return new BrewingMethodsResponse

@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics.Metrics;
 
-public class Order : BaseEntity
+public class Order
 {
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.None)]
@@ -11,7 +11,7 @@ public class Order : BaseEntity
 
     public string? UserId { get; set; }
     public string? GuestKey { get; set; }
-
+    public int? PromotionId { get; set; }
     [Required, StringLength(150)]
     public string ReceiverName { get; set; } = null!;
 
@@ -36,11 +36,6 @@ public class Order : BaseEntity
     [Required]
     [StringLength(20)]
     public string Status { get; set; } = "pending";
-
-    public int? PromotionId { get; set; }
-
-    [StringLength(50)]
-    public string? VoucherCode { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
