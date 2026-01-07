@@ -21,7 +21,7 @@ namespace LVTN_BE_COFFE.Domain.VModel
         public int? ShippingAddressId { get; set; }
 
         public string ShippingMethod { get; set; } = "Standard";
-        public string? VoucherCode { get; set; }
+        public string? PromotionCode { get; set; }
     }
 
     public class OrderUpdateVModel
@@ -57,6 +57,7 @@ namespace LVTN_BE_COFFE.Domain.VModel
         public decimal ShippingFee { get; set; }
 
         public decimal DiscountAmount { get; set; }
+        public string? PromotionCode { get; set; }
 
         public decimal FinalAmount { get; set; }
 
