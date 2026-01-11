@@ -176,6 +176,7 @@ namespace LVTN_BE_COFFE.Services.Services
             {
                 UserName = model.UserName,      // Lấy từ model, không dùng Email nữa
                 Email = model.Email,
+               // PhoneNumber = model.,
                 FirstName = model.FirstName,    // Mới
                 LastName = model.LastName,      // Mới
                 Sex = model.Sex,                // Mới

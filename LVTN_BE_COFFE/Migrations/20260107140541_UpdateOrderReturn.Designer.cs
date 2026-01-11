@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LVTN_BE_COFFE.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260107062444_dbcoffe")]
-    partial class dbcoffe
+    [Migration("20260107140541_UpdateOrderReturn")]
+    partial class UpdateOrderReturn
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
