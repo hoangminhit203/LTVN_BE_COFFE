@@ -13,6 +13,7 @@ namespace LVTN_BE_COFFE.Domain.VModel
         public bool? Sex { get; set; }
         public DateOnly? Birthday { get; set; }
         public bool? IsActive { get; set; }
+        public string RoleName { get; set; }
     }
     public class AspNetUsersCreateVModel : AspNetUsersVModel
     {
@@ -31,6 +32,7 @@ namespace LVTN_BE_COFFE.Domain.VModel
         public string? CreatedBy { get; set; }
         public DateTime? UpdatedDate { get; set; }
         public string? UpdatedBy { get; set; }
+   
     }
     public class AspNetUsersFilterParams
     {

@@ -9,6 +9,7 @@ namespace LVTN_BE_COFFE.Infrastructures.Entities
         public string? LastName { get; set; }
 
         public string? AvatarPath { get; set; }
+     //   public string? PhoneNumner { get; set; }
 
         public bool? Sex { get; set; }
 
