@@ -20,6 +20,19 @@ namespace LVTN_BE_COFFE.Services.Services
 
         public async Task<ActionResult<ResponseResult>> CreateBannerAsync(BannerCreateVmodel vmodel)
         {
+            var existingBanner = await _context.Banners
+                .FirstOrDefaultAsync(b => b.Position == vmodel.Position &&  b.Type == vmodel.Type);
+
+            if (existingBanner!=null)
+            {
+                var responseFail = new ResponseResult
+                {
+                    IsSuccess = false,
+                    Message = "Vị trí banner trong banner type đã tồn tại",
+                    Data = null
+                };
+                return new ActionResult<ResponseResult>(responseFail);
+            }
             string url = "";
             string publicId = "";
             if (vmodel.File != null)
@@ -34,6 +47,7 @@ namespace LVTN_BE_COFFE.Services.Services
                 ImageUrl = url,
                 IsActive = vmodel.IsActive,
                 Position = vmodel.Position,
+                Type = vmodel.Type,
                 CreatedAt = DateTime.UtcNow
             };
             await _context.Banners.AddAsync(banner);
@@ -141,8 +155,7 @@ namespace LVTN_BE_COFFE.Services.Services
 
         public async Task<ActionResult<ResponseResult>> UpdateBannerAsync(int id, BannerUpdateVmodel vmodel)
         {
-            string url = "";
-            string publicId = "";
+
             var banner = await _context.Banners.FindAsync(id);
             if (banner == null)
             {
@@ -156,17 +169,15 @@ namespace LVTN_BE_COFFE.Services.Services
             }
             if (vmodel.File != null)
             {
-                var update = await _cloudinaryService.UpdateImage(vmodel.File,vmodel.publicId);
-                url = update.Url;
-                publicId= update.PublicId;
+                var update = await _cloudinaryService.UpdateImage(vmodel.File,banner.PublicId);
+                banner.ImageUrl = update.Url;
+                banner.PublicId = update.PublicId;
             }
-            banner.PublicId = publicId;
-            banner.ImageUrl = url;
             banner.IsActive = vmodel.IsActive;
             banner.Position = vmodel.Position;
             banner.UpdatedAt = DateTime.UtcNow;
             _context.Banners.Update(banner);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
             var response = new ResponseResult
             {
                 IsSuccess = true,

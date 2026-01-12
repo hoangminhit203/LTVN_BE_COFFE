@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LVTN_BE_COFFE.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260107140541_UpdateOrderReturn")]
-    partial class UpdateOrderReturn
+    [Migration("20260112041545_dbcoffe")]
+    partial class dbcoffe
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -509,6 +509,9 @@ namespace LVTN_BE_COFFE.Migrations
                     b.Property<string>("PublicId")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");

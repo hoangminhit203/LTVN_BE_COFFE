@@ -1,18 +1,22 @@
-﻿namespace LVTN_BE_COFFE.Domain.VModel
+﻿using LVTN_BE_COFFE.Infrastructures.Entities;
+
+namespace LVTN_BE_COFFE.Domain.VModel
 {
     public class BannerCreateVmodel
     {
         public IFormFile? File { get; set; }
         public bool IsActive { get; set; }
         public int Position { get; set; }
+        public bannerType Type { get; set; }
         public DateTime CreatedDate { get; set; }
     }
     public class BannerUpdateVmodel
     {
-        public string publicId { get; set; } = null!;
+        //public string publicId { get; set; } = null!;
         public IFormFile? File { get; set; }
         public bool IsActive { get; set; }
         public int Position { get; set; }
+        public bannerType Type { get; set; }
         public DateTime UpdateDate { get; set; }
     }
 
