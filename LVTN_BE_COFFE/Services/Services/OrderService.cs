@@ -3,6 +3,7 @@ using LVTN_BE_COFFE.Domain.IServices;
 using LVTN_BE_COFFE.Domain.Model;
 using LVTN_BE_COFFE.Domain.VModel;
 using LVTN_BE_COFFE.Infrastructures.Entities;
+using LVTN_BE_COFFE.Services.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,19 +14,22 @@ public class OrderService : IOrderService
     private readonly IEmailSenderService _emailSender;
     private readonly IConfiguration _configuration;
     private readonly IWebHostEnvironment _env;
+    private readonly CloudinaryService _cloudinaryService;
 
     public OrderService(
         AppDbContext context,
         ICartService cartService,
         IEmailSenderService emailSender,
         IConfiguration configuration,
-        IWebHostEnvironment env)
+        IWebHostEnvironment env,
+        CloudinaryService cloudinaryService) 
     {
         _context = context;
         _cartService = cartService;
         _emailSender = emailSender;
         _configuration = configuration;
         _env = env;
+        _cloudinaryService = cloudinaryService;
     }
 
     public async Task<ActionResult<ResponseResult>> CreateOrder(string? userId, string? guestKey, OrderCreateVModel model)
@@ -470,4 +474,101 @@ public class OrderService : IOrderService
 
         return 35000;
     }
+    // Thêm method này vào OrderService.cs
+
+    // Thêm tham số guestKey vào hàm
+    public async Task<ActionResult<ResponseResult>> RequestReturnOrder(string orderId, string? userId, string? guestKey, ReturnOrderInputModel input)
+    {
+        try
+        {
+            // 1. SỬA LOGIC CHECK QUYỀN SỞ HỮU
+            // Kiểm tra đơn hàng tồn tại VÀ (thuộc về UserId HOẶC thuộc về GuestKey)
+            var order = await _context.Orders
+                .FirstOrDefaultAsync(o => o.OrderId == orderId &&
+                    ((userId != null && o.UserId == userId) || (guestKey != null && o.GuestKey == guestKey)));
+
+            if (order == null)
+                // Thông báo chung chung để bảo mật, hoặc cụ thể là "Không tìm thấy đơn hàng hoặc bạn không có quyền."
+                return new BadRequestObjectResult(new ResponseResult { IsSuccess = false, Message = "Không tìm thấy đơn hàng hợp lệ." });
+
+            // 2. Kiểm tra xem đơn hàng này đã từng yêu cầu trả hàng chưa
+            var existingRequest = await _context.OrderReturns
+                .FirstOrDefaultAsync(r => r.OrderId == orderId);
+
+            if (existingRequest != null)
+                return new BadRequestObjectResult(new ResponseResult { IsSuccess = false, Message = "Đơn hàng này đang được xử lý khiếu nại." });
+
+            // 3. Xử lý Upload ảnh lên Cloudinary
+            var uploadedImageUrls = new List<string>();
+
+            if (input.Images != null && input.Images.Any())
+            {
+                if (input.Images.Count > 5)
+                    return new BadRequestObjectResult(new ResponseResult { IsSuccess = false, Message = "Chỉ được upload tối đa 5 ảnh." });
+
+                foreach (var file in input.Images)
+                {
+                    if (file.Length > 0)
+                    {
+                        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+                        var fileExtension = Path.GetExtension(file.FileName).ToLowerInvariant();
+
+                        if (!allowedExtensions.Contains(fileExtension))
+                            return new BadRequestObjectResult(new ResponseResult { IsSuccess = false, Message = $"File {file.FileName} không phải là ảnh hợp lệ." });
+
+                        if (file.Length > 5 * 1024 * 1024)
+                            return new BadRequestObjectResult(new ResponseResult { IsSuccess = false, Message = $"File {file.FileName} vượt quá 5MB." });
+
+                        try
+                        {
+                            // Gọi service Cloudinary để upload
+                            var (url, publicId) = await _cloudinaryService.UploadImageAsync(file);
+                            if (!string.IsNullOrEmpty(url)) uploadedImageUrls.Add(url);
+                        }
+                        catch (Exception uploadEx)
+                        {
+                            Console.WriteLine($"[ERROR] Upload image failed: {uploadEx.Message}");
+                            // Tùy chọn: Có thể return lỗi luôn hoặc bỏ qua ảnh lỗi
+                            return new BadRequestObjectResult(new ResponseResult { IsSuccess = false, Message = $"Lỗi upload ảnh: {uploadEx.Message}" });
+                        }
+                    }
+                }
+            }
+
+            // 4. Tạo record OrderReturn
+            var returnRequest = new OrderReturn
+            {
+                OrderId = orderId,
+                Reason = input.Reason,
+                ProofImages = uploadedImageUrls.Any() ? string.Join(";", uploadedImageUrls) : "",
+                Status = "pending",
+                CreatedAt = DateTime.UtcNow
+            };
+
+            // 5. Cập nhật trạng thái Order
+            order.Status = "return_requested"; // Đổi status
+
+            // 6. Lưu Database
+            _context.OrderReturns.Add(returnRequest);
+            await _context.SaveChangesAsync();
+
+            return new OkObjectResult(new ResponseResult
+            {
+                IsSuccess = true,
+                Message = "Đã gửi yêu cầu hoàn trả thành công.",
+                Data = new
+                {
+                    OrderId = orderId,
+                    ReturnRequestId = returnRequest.Id,
+                    UploadedImagesCount = uploadedImageUrls.Count
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ERROR] RequestReturnOrder Service: {ex.Message}");
+            return new BadRequestObjectResult(new ResponseResult { IsSuccess = false, Message = $"Lỗi xử lý: {ex.Message}" });
+        }
+    }
+
 }
