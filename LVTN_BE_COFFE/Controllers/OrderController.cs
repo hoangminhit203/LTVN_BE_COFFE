@@ -2,6 +2,7 @@
 using LVTN_BE_COFFE.Domain.IServices;
 using LVTN_BE_COFFE.Domain.Model;
 using LVTN_BE_COFFE.Domain.VModel;
+using LVTN_BE_COFFE.Services.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
@@ -123,11 +124,45 @@ namespace LVTN_BE_COFFE.Controllers
         {
             return await _orderService.GetAllOrder();
         }
+
         // 7. ADMIN LẤY CHI TIẾT ĐƠN HÀNG BẤT KỲ
         [HttpGet("admin/{id}")]
         public async Task<ActionResult<ResponseResult>> GetOrderByIdAdmin(string id)
         {
             return await _orderService.GetOrderAdmin(id);
+        }
+
+
+        [HttpPost("{orderId}/return-request")]
+        public async Task<IActionResult> RequestReturnOrder(string orderId, [FromForm] ReturnOrderInputModel input)
+        {
+            // 1. Lấy UserId chuẩn xác từ Token
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                         ?? User.FindFirst("sub")?.Value
+                         ?? User.FindFirst("UserId")?.Value; // Dự phòng trường hợp bạn đổi cách generate token
+
+            // 2. Lấy GuestKey (Ưu tiên Header -> Cookie)
+            string? guestKey = Request.Headers["guestKey"].ToString();
+            if (string.IsNullOrEmpty(guestKey))
+            {
+                guestKey = Request.Cookies["guest_session_id"];
+            }
+
+            Console.WriteLine($"[DEBUG] Check Identity -> UserId: {userId} | GuestKey: {guestKey}");
+
+            // 3. Kiểm tra chặn lỗi
+            if (string.IsNullOrEmpty(userId) && string.IsNullOrEmpty(guestKey))
+            {
+                return Unauthorized(new { IsSuccess = false, Message = "Không xác định được danh tính khách hàng (Thiếu Token hoặc Header guestKey)." });
+            }
+
+            // 4. Gọi Service
+            var result = await _orderService.RequestReturnOrder(orderId, userId, guestKey, input);
+
+            if (result.Result is OkObjectResult okResult) return Ok(okResult.Value);
+            if (result.Result is BadRequestObjectResult badResult) return BadRequest(badResult.Value);
+
+            return StatusCode(500, new { IsSuccess = false, Message = "Lỗi hệ thống." });
         }
     }
 }
