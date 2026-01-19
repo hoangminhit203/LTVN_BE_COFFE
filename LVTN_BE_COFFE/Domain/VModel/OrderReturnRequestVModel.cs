@@ -4,7 +4,7 @@ namespace LVTN_BE_COFFE.Domain.VModel
 {
     public class ReturnOrderInputModel
     {
-        [Required(ErrorMessage = "Vui lòng nhập lý do")]
+        [Required]
         public string Reason { get; set; }
 
         // Sử dụng IFormFile để nhận file ảnh upload
