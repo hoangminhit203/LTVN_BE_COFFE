@@ -202,35 +202,27 @@ public class OrderService : IOrderService
     }
     public async Task<ActionResult<ResponseResult>> GetOrdersByIdentity(string? userId, string? guestKey)
     {
-
         var query = _context.Orders.AsQueryable();
 
-        // Sửa logic: Nếu có cả 2, lấy đơn hàng của cả 2
+        // 1. Lọc theo User hoặc Guest
         if (!string.IsNullOrEmpty(userId) && !string.IsNullOrEmpty(guestKey))
         {
             query = query.Where(o => o.UserId == userId || o.GuestKey == guestKey);
         }
-        // Chỉ có userId
         else if (!string.IsNullOrEmpty(userId))
         {
             query = query.Where(o => o.UserId == userId);
         }
-        // Chỉ có guestKey
         else if (!string.IsNullOrEmpty(guestKey))
         {
             query = query.Where(o => o.GuestKey == guestKey);
         }
         else
         {
-            // Không có định danh, trả về rỗng
-            // Console.WriteLine("[DEBUG] Không có userId hoặc guestKey");
             return new OkObjectResult(new ResponseResult { IsSuccess = true, Data = new List<OrderResponse>() });
         }
 
-        // Log SQL query (nếu cần)
-        var sqlQuery = query.ToQueryString();
-        //  Console.WriteLine($"[DEBUG] SQL Query: {sqlQuery}");
-
+        // 2. Lấy danh sách Orders từ DB
         var orders = await query
             .Include(o => o.OrderItems)
                 .ThenInclude(oi => oi.ProductVariant)
@@ -238,12 +230,29 @@ public class OrderService : IOrderService
             .OrderByDescending(o => o.CreatedAt)
             .ToListAsync();
 
-        // Console.WriteLine($"[DEBUG] Tìm thấy {orders.Count} đơn hàng trong database");
+        // 3. Lấy danh sách OrderId để tìm trong bảng OrderReturns
+        var orderIds = orders.Select(o => o.OrderId).ToList();
 
-        var result = orders.Select(MapToResponse).ToList();
+        // 4. Tìm các yêu cầu trả hàng liên quan
+        var returnRequests = await _context.OrderReturns
+            .Where(r => orderIds.Contains(r.OrderId))
+            .ToListAsync();
+
+        // 5. Ghép dữ liệu (Map)
+        var result = orders.Select(order =>
+        {
+            // Tìm phiếu trả hàng của đơn này (lấy cái mới nhất nếu có nhiều)
+            var myReturn = returnRequests
+                .Where(r => r.OrderId == order.OrderId)
+                .OrderByDescending(r => r.CreatedAt)
+                .FirstOrDefault();
+
+            // Truyền cả Order và OrderReturn vào hàm Map
+            return MapToResponse(order, myReturn);
+        }).ToList();
+
         return new OkObjectResult(new ResponseResult { IsSuccess = true, Data = result });
     }
-
     public async Task<ActionResult<ResponseResult>> GetOrder(string orderId)
     {
         var order = await _context.Orders
@@ -302,13 +311,37 @@ public class OrderService : IOrderService
 
     public async Task<ActionResult<ResponseResult>> GetAllOrder()
     {
+        // 1. Lấy danh sách tất cả đơn hàng
         var orders = await _context.Orders
             .Include(o => o.OrderItems)
                 .ThenInclude(oi => oi.ProductVariant)
                     .ThenInclude(pv => pv.Images)
             .OrderByDescending(o => o.CreatedAt)
             .ToListAsync();
-        return new OkObjectResult(new ResponseResult { IsSuccess = true, Data = orders.Select(MapToResponse) });
+
+
+        // 2. Lấy danh sách các OrderId
+        var orderIds = orders.Select(o => o.OrderId).ToList();
+
+        // 3. Tìm các phiếu yêu cầu trả hàng liên quan đến danh sách đơn hàng trên
+        var returnRequests = await _context.OrderReturns
+            .Where(r => orderIds.Contains(r.OrderId))
+            .ToListAsync();
+
+        // 4. Ghép dữ liệu (Mapping)
+        var result = orders.Select(order =>
+        {
+            // Tìm xem đơn này có phiếu trả hàng nào không (Lấy cái mới nhất)
+            var myReturn = returnRequests
+                .Where(r => r.OrderId == order.OrderId)
+                .OrderByDescending(r => r.CreatedAt)
+                .FirstOrDefault();
+
+            // Truyền cả order và myReturn vào hàm MapToResponse
+            return MapToResponse(order, myReturn);
+        }).ToList();
+
+        return new OkObjectResult(new ResponseResult { IsSuccess = true, Data = result });
     }
 
     private async Task SendOrderConfirmationEmail(Order order, string recipientEmail)
@@ -431,7 +464,8 @@ public class OrderService : IOrderService
         await _emailSender.SendMailAsync(fromEmail, fromPassword, recipientEmail, subject, body);
     }
 
-    private static OrderResponse MapToResponse(Order order)
+    // Thêm tham số thứ 2 là OrderReturn (có thể null)
+    private static OrderResponse MapToResponse(Order order, OrderReturn? returnReq = null)
     {
         return new OrderResponse
         {
@@ -444,11 +478,15 @@ public class OrderService : IOrderService
             DiscountAmount = order.DiscountAmount,
             FinalAmount = order.FinalAmount,
             ShippingAddress = order.ShippingAddressSnapshot,
-            Status = order.Status,
+            Status = order.Status, // Status gốc của đơn hàng (pending, delivered...)
             CreatedAt = order.CreatedAt,
             ItemCount = order.OrderItems.Count,
             ShippingMethod = order.ShippingMethod,
             PromotionCode = order.Promotion?.Code,
+
+            ReturnRequestStatus = returnReq?.Status,
+            ReturnAdminNote = returnReq?.AdminNote,
+
             OrderItems = order.OrderItems.Select(oi => new OrderItemResponse
             {
                 Id = oi.Id,
@@ -569,6 +607,81 @@ public class OrderService : IOrderService
             Console.WriteLine($"[ERROR] RequestReturnOrder Service: {ex.Message}");
             return new BadRequestObjectResult(new ResponseResult { IsSuccess = false, Message = $"Lỗi xử lý: {ex.Message}" });
         }
+    }
+    // --- LẤY DANH SÁCH YÊU CẦU TRẢ HÀNG (CHO ADMIN) ---
+    public async Task<ActionResult<ResponseResult>> GetReturnRequests()
+    {
+        var requests = await _context.OrderReturns
+            .Include(r => r.Order) // Join bảng Order để lấy tên khách
+            .OrderByDescending(r => r.CreatedAt) // Mới nhất lên đầu
+            .ToListAsync();
+
+        var result = requests.Select(r => new OrderReturnResponse
+        {
+            Id = r.Id,
+            OrderId = r.OrderId,
+            CustomerName = r.Order != null ? r.Order.ReceiverName : "Unknown",
+            Reason = r.Reason,
+            // Tách chuỗi ảnh thành List (ngăn cách bởi dấu chấm phẩy)
+            ProofImages = !string.IsNullOrEmpty(r.ProofImages)
+                          ? r.ProofImages.Split(';').ToList()
+                          : new List<string>(),
+            Status = r.Status,
+            AdminNote = r.AdminNote,
+            CreatedAt = r.CreatedAt,
+            RefundAmount = r.Order?.TotalAmount ?? 0
+        }).ToList();
+
+        return new OkObjectResult(new ResponseResult { IsSuccess = true, Data = result });
+    }
+
+    // --- XỬ LÝ YÊU CẦU (DUYỆT / TỪ CHỐI) ---
+    public async Task<ActionResult<ResponseResult>> ProcessReturnRequest(int requestId, ProcessReturnModel model)
+    {
+        var request = await _context.OrderReturns
+            .Include(r => r.Order)
+            .FirstOrDefaultAsync(r => r.Id == requestId);
+
+        if (request == null)
+            return new NotFoundObjectResult(new ResponseResult { IsSuccess = false, Message = "Không tìm thấy yêu cầu." });
+
+        if (request.Status != "pending")
+            return new BadRequestObjectResult(new ResponseResult { IsSuccess = false, Message = "Yêu cầu này đã được xử lý rồi." });
+
+        request.AdminNote = model.Note;
+
+        if (model.Action.ToLower() == "approve")
+        {
+            // 1. Cập nhật trạng thái yêu cầu
+            request.Status = "approved";
+
+            // 2. Cập nhật trạng thái đơn hàng thành "Đã trả hàng/Hoàn tiền"
+            if (request.Order != null)
+            {
+                request.Order.Status = "returned"; // Hoặc "refunded"
+            }
+
+            // TODO: Ở đây bạn có thể gọi thêm Service hoàn tiền (VNPAY refund) hoặc cộng lại Stock nếu cần
+        }
+        else if (model.Action.ToLower() == "reject")
+        {
+            // 1. Cập nhật trạng thái yêu cầu
+            request.Status = "rejected";
+
+            // 2. Trả trạng thái đơn hàng về như cũ (đã giao thành công) vì không cho trả
+            if (request.Order != null)
+            {
+                request.Order.Status = "delivered";
+            }
+        }
+        else
+        {
+            return new BadRequestObjectResult(new ResponseResult { IsSuccess = false, Message = "Hành động không hợp lệ (chỉ approve/reject)." });
+        }
+
+        await _context.SaveChangesAsync();
+
+        return new OkObjectResult(new ResponseResult { IsSuccess = true, Message = $"Đã {model.Action} yêu cầu thành công." });
     }
 
 }

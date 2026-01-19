@@ -164,5 +164,25 @@ namespace LVTN_BE_COFFE.Controllers
 
             return StatusCode(500, new { IsSuccess = false, Message = "Lỗi hệ thống." });
         }
+        [HttpGet("admin/returns")]
+        // [Authorize(Roles = "Admin")] // Nhớ bật cái này khi chạy thật
+        public async Task<IActionResult> GetReturnRequests()
+        {
+            var result = await _orderService.GetReturnRequests();
+            // Xử lý unbox ActionResult tương tự các hàm trên
+            if (result.Result is OkObjectResult ok) return Ok(ok.Value);
+            return BadRequest(((BadRequestObjectResult)result.Result).Value);
+        }
+
+        // POST: api/order/admin/returns/{requestId}/process
+        // Duyệt hoặc từ chối
+        [HttpPost("admin/returns/{requestId}/process")]
+        // [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ProcessReturnRequest(int requestId, [FromBody] ProcessReturnModel model)
+        {
+            var result = await _orderService.ProcessReturnRequest(requestId, model);
+            if (result.Result is OkObjectResult ok) return Ok(ok.Value);
+            return BadRequest(((BadRequestObjectResult)result.Result).Value); // Hoặc NotFound tùy logic
+        }
     }
 }

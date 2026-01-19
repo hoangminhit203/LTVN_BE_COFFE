@@ -66,6 +66,8 @@ namespace LVTN_BE_COFFE.Domain.VModel
         public DateTime? UpdatedAt { get; set; }
 
         public List<OrderItemResponse> OrderItems { get; set; } = new();
+        public string? ReturnRequestStatus { get; set; }
+        public string? ReturnAdminNote { get; set; }
     }
 
     // 5. MODEL LỌC ĐƠN HÀNG

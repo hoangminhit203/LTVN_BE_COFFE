@@ -14,5 +14,7 @@ namespace LVTN_BE_COFFE.Domain.IServices
         Task<ActionResult<ResponseResult>> GetAllOrder();
         Task<ActionResult<ResponseResult>> GetOrderAdmin(string orderId);
         Task<ActionResult<ResponseResult>> RequestReturnOrder(string orderId, string? userId, string? guestKey, ReturnOrderInputModel input);
+        Task<ActionResult<ResponseResult>> GetReturnRequests();
+        Task<ActionResult<ResponseResult>> ProcessReturnRequest(int requestId, ProcessReturnModel model);
     }
 }
