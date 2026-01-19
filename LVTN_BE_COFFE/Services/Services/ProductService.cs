@@ -315,16 +315,22 @@ namespace LVTN_BE_COFFE.Services.Services
                 if (!string.IsNullOrEmpty(filter.Name))
                     query = query.Where(x => x.Name.Contains(filter.Name));
 
-                if (filter.CategoryId.HasValue)
-                    query = query.Where(x => x.Categories.Any(c => c.Id == filter.CategoryId));
+                if (!string.IsNullOrEmpty(filter.Origin))
+                    query = query.Where(x => x.Variants.Any(v => v.Origin.Contains(filter.Origin)));
+                if (filter.MinPrice.HasValue && filter.MaxPrice.HasValue)
+                {
+                    query = query.Where(x => x.Variants.Any(v => v.Price >= filter.MinPrice.Value && v.Price <= filter.MaxPrice.Value));
+                }
+                else if (filter.MinPrice.HasValue)
+                {
+                    query = query.Where(x => x.Variants.Any(v => v.Price >= filter.MinPrice.Value));
+                }
+                else if (filter.MaxPrice.HasValue)
+                {
+                    query = query.Where(x => x.Variants.Any(v => v.Price <= filter.MaxPrice.Value));
+                }
 
-                if (!string.IsNullOrEmpty(filter.RoastLevel))
-                    query = query.Where(x => x.Variants.Any(v => v.RoastLevel == filter.RoastLevel));
-
-                if (!string.IsNullOrEmpty(filter.BeanType))
-                    query = query.Where(x => x.Variants.Any(v => v.BeanType == filter.BeanType));
-
-                var total = await query.CountAsync();
+                    var total = await query.CountAsync();
                 var totalPages = (int)Math.Ceiling((double)total / filter.PageSize);
 
                 var data = await query

@@ -67,20 +67,10 @@ namespace LVTN_BE_COFFE.Domain.VModel
     public class ProductFilterVModel
     {
         public string? Name { get; set; }
-        public int? CategoryId { get; set; }
-
-        public string? RoastLevel { get; set; }
-        public string? BeanType { get; set; }
         public string? Origin { get; set; }
 
-        public int? MinAcidity { get; set; }
-        public int? MaxAcidity { get; set; }
-
-        public decimal? MinWeight { get; set; }
-        public decimal? MaxWeight { get; set; }
-
-        public string? FlavorNote { get; set; }
-        public string? BrewingMethod { get; set; }
+        public decimal? MinPrice { get; set; }
+        public decimal? MaxPrice { get; set; }
 
         public int PageNumber { get; set; } = Numbers.Pagination.DefaultPageNumber;
         public int PageSize { get; set; } = Numbers.Pagination.DefaultPageSize;
