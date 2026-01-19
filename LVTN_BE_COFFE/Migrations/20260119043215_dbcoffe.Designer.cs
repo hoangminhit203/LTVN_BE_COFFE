@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LVTN_BE_COFFE.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260113125553_UpdateBanner")]
-    partial class UpdateBanner
+    [Migration("20260119043215_dbcoffe")]
+    partial class dbcoffe
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
