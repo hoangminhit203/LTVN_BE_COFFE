@@ -42,8 +42,9 @@ namespace LVTN_BE_COFFE.Domain.VModel
     public class OrderResponse
     {
         public string Id { get; set; } = null!;
+        public int? ProductId { get; set; } // Thêm nếu cần
 
-        // Thông tin vận chuyển
+     
         public string? ShippingMethod { get; set; }
         public string ShippingAddress { get; set; } = null!;
 

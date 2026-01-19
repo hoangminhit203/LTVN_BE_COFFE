@@ -222,8 +222,11 @@ public class OrderService : IOrderService
             return new OkObjectResult(new ResponseResult { IsSuccess = true, Data = new List<OrderResponse>() });
         }
 
-        // 2. Lấy danh sách Orders từ DB
+        // 2. Lấy danh sách Orders từ DB - THÊM .ThenInclude(pv => pv.Product)
         var orders = await query
+            .Include(o => o.OrderItems)
+                .ThenInclude(oi => oi.ProductVariant)
+                    .ThenInclude(pv => pv.Product) // ← THÊM DÒNG NÀY
             .Include(o => o.OrderItems)
                 .ThenInclude(oi => oi.ProductVariant)
                     .ThenInclude(pv => pv.Images)
@@ -464,7 +467,7 @@ public class OrderService : IOrderService
         await _emailSender.SendMailAsync(fromEmail, fromPassword, recipientEmail, subject, body);
     }
 
-    // Thêm tham số thứ 2 là OrderReturn (có thể null)
+   
     private static OrderResponse MapToResponse(Order order, OrderReturn? returnReq = null)
     {
         return new OrderResponse
@@ -478,7 +481,7 @@ public class OrderService : IOrderService
             DiscountAmount = order.DiscountAmount,
             FinalAmount = order.FinalAmount,
             ShippingAddress = order.ShippingAddressSnapshot,
-            Status = order.Status, // Status gốc của đơn hàng (pending, delivered...)
+            Status = order.Status,
             CreatedAt = order.CreatedAt,
             ItemCount = order.OrderItems.Count,
             ShippingMethod = order.ShippingMethod,
@@ -490,6 +493,7 @@ public class OrderService : IOrderService
             OrderItems = order.OrderItems.Select(oi => new OrderItemResponse
             {
                 Id = oi.Id,
+                ProductId = oi.ProductVariant?.ProductId ?? 0, // ← THÊM DÒNG NÀY
                 ProductName = oi.ProductNameAtPurchase,
                 ProductVariantId = oi.ProductVariantId,
                 Quantity = oi.Quantity,
