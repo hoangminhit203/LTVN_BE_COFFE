@@ -8,7 +8,7 @@ namespace LVTN_BE_COFFE.Domain.VModel
     public class WishlistCreateVModel
     {
         [Required(ErrorMessage = "Mã sản phẩm là bắt buộc.")]
-        public int ProductId { get; set; }
+        public int VariantId { get; set; }
     }
 
     public class WishlistResponseVModel

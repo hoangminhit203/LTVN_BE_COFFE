@@ -38,7 +38,7 @@ namespace LVTN_BE_COFFE.Controllers
             return Ok(wishlist);
         }
         [HttpPost]
-        public async Task<ActionResult<WishlistResponseVModel>> AddToWishlist([FromBody] WishlistCreateVModel model)
+        public async Task<ActionResult<ResponseResult>> AddToWishlist([FromBody] WishlistCreateVModel model)
         {
             var userId = GetUserId();
             var wishlistItem = await _wishlistService.AddToWishlist(userId, model);
@@ -54,24 +54,28 @@ namespace LVTN_BE_COFFE.Controllers
         }
 
         [HttpDelete("{wishlistId}")]
-        public async Task<ActionResult> RemoveFromWishlist(int wishlistId)
+        public async Task<ActionResult<ResponseResult>> RemoveFromWishlist(int wishlistId)
         {
             var userId = GetUserId();
             var result = await _wishlistService.RemoveFromWishlistById(wishlistId, userId);
-            if (!result)
-            {
-                return NotFound(new { message = "Wishlist item not found or does not belong to the user." });
-            }
-            return NoContent();
+            
+            return Ok(result);
         }
         [HttpPost]
         [Route("check")]
-        public async Task<ActionResult<bool>> IsProductInWishlist([FromBody] int productId)
+        public async Task<ActionResult<ResponseResult>> IsProductInWishlist([FromBody] int productId)
         {
             var userId = GetUserId();
             var exists = await _wishlistService.IsProductInWishlist(userId, productId);
             return Ok(exists);
         }
-
+        [HttpPost]
+        [Route("addtocard")]
+        public async Task<ActionResult<ResponseResult>> AddToCard([FromBody] int wishlistId)
+        {
+            var userId = GetUserId();
+            var wishlistItems = await _wishlistService.AddToCard( userId, wishlistId);
+            return Ok( wishlistItems);
+        }
     }
 }
