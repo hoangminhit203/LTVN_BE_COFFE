@@ -8,6 +8,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.IO;
+using ClosedXML.Excel;
 
 namespace LVTN_BE_COFFE.Services.Services
 {
@@ -592,19 +594,157 @@ namespace LVTN_BE_COFFE.Services.Services
             }
         }
 
-        // ==========================================
-        // 7. XUẤT BÁO CÁO EXCEL (Placeholder)
-        // ==========================================
+        // 7. XUẤT BÁO CÁO EXCEL (ClosedXML implementation)
+        // 7. XUẤT BÁO CÁO EXCEL (ClosedXML implementation)
         public async Task<byte[]> ExportRevenueReport(StatisticsFilterVModel filter)
         {
-            // TODO: Implement Excel export using EPPlus or ClosedXML
-            await Task.CompletedTask;
-            return Array.Empty<byte>();
-        }
+            try
+            {
+                // 1. LẤY DỮ LIỆU (Giữ nguyên logic của bạn)
+                var query = _context.Orders.AsQueryable();
 
-        // ==========================================
+                if (filter.FromDate.HasValue)
+                    query = query.Where(o => o.CreatedAt >= filter.FromDate.Value);
+
+                if (filter.ToDate.HasValue)
+                    query = query.Where(o => o.CreatedAt <= filter.ToDate.Value.AddDays(1).AddSeconds(-1));
+
+                if (!string.IsNullOrEmpty(filter.Status))
+                    query = query.Where(o => o.Status == filter.Status);
+                else
+                    query = query.Where(o => o.Status != "cancelled");
+
+                var orders = await query.Include(o => o.OrderItems).ToListAsync();
+
+                // Tính toán tổng
+                var totalRevenue = orders.Sum(o => o.TotalAmount);
+                var totalShippingFee = orders.Sum(o => o.ShippingFee);
+                var totalDiscount = orders.Sum(o => o.DiscountAmount);
+                var netRevenue = orders.Sum(o => o.FinalAmount);
+
+                // 2. TẠO EXCEL VÀ FORMAT
+                using var workbook = new XLWorkbook();
+                var ws = workbook.Worksheets.Add("RevenueReport");
+
+                // --- PHẦN TIÊU ĐỀ CHÍNH (HEADER) ---
+                var currentRow = 1;
+
+                // Merge ô để làm tiêu đề lớn
+                var titleRange = ws.Range(currentRow, 1, currentRow, 10);
+                titleRange.Merge().Value = "THỐNG KÊ DOANH THU";
+                titleRange.Style.Font.FontSize = 20;
+                titleRange.Style.Font.Bold = true;
+                titleRange.Style.Font.FontColor = XLColor.DarkBlue;
+                titleRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                titleRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+
+                currentRow += 2; // Cách ra 2 dòng
+
+                // --- PHẦN THÔNG TIN TỔNG HỢP ---
+                ws.Cell(currentRow, 1).Value = "Giai đoạn:";
+                ws.Cell(currentRow, 1).Style.Font.Bold = true;
+                ws.Cell(currentRow, 2).Value = $"{(filter.FromDate.HasValue ? filter.FromDate.Value : DateTime.MinValue):dd/MM/yyyy} - {(filter.ToDate.HasValue ? filter.ToDate.Value : DateTime.MaxValue):dd/MM/yyyy}";
+
+                currentRow++;
+                ws.Cell(currentRow, 1).Value = "Tổng doanh thu:";
+                ws.Cell(currentRow, 2).Value = totalRevenue;
+                ws.Cell(currentRow, 2).Style.NumberFormat.Format = "#,##0"; // Format số
+
+                currentRow++;
+                ws.Cell(currentRow, 1).Value = "Phí vận chuyển:";
+                ws.Cell(currentRow, 2).Value = totalShippingFee;
+                ws.Cell(currentRow, 2).Style.NumberFormat.Format = "#,##0";
+
+                currentRow++;
+                ws.Cell(currentRow, 1).Value = "Tổng giảm giá:";
+                ws.Cell(currentRow, 2).Value = totalDiscount;
+                ws.Cell(currentRow, 2).Style.NumberFormat.Format = "#,##0";
+
+                currentRow++;
+                ws.Cell(currentRow, 1).Value = "Doanh thu thực:";
+                ws.Cell(currentRow, 1).Style.Font.Bold = true;
+                ws.Cell(currentRow, 2).Value = netRevenue;
+                ws.Cell(currentRow, 2).Style.Font.Bold = true;
+                ws.Cell(currentRow, 2).Style.NumberFormat.Format = "#,##0";
+
+                currentRow++;
+                ws.Cell(currentRow, 1).Value = "Tổng đơn hàng:";
+                ws.Cell(currentRow, 2).Value = orders.Count;
+
+                // --- PHẦN BẢNG DỮ LIỆU ---
+                var tableStartRow = currentRow + 3;
+                var col = 1;
+
+                // Định nghĩa Header cho bảng
+                string[] headers = {
+            "Mã ĐH", "Ngày tạo", "Trạng thái",
+            "Tổng tiền", "Phí ship", "Giảm giá", "Thực thu",
+            "SL SP", "Người nhận", "Email"
+        };
+
+                foreach (var header in headers)
+                {
+                    var cell = ws.Cell(tableStartRow, col++);
+                    cell.Value = header;
+                    // Style cho Header bảng (Nền xanh, chữ trắng, in đậm)
+                    cell.Style.Fill.BackgroundColor = XLColor.FromHtml("#4472C4");
+                    cell.Style.Font.FontColor = XLColor.White;
+                    cell.Style.Font.Bold = true;
+                    cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                }
+
+                // Đổ dữ liệu
+                var row = tableStartRow + 1;
+                foreach (var o in orders)
+                {
+                    col = 1;
+                    ws.Cell(row, col++).Value = o.OrderId;
+                    ws.Cell(row, col++).Value = o.CreatedAt;
+                    ws.Cell(row, col++).Value = o.Status ?? "";
+
+                    // Các cột tiền tệ (bỏ ép kiểu double để giữ độ chính xác decimal)
+                    ws.Cell(row, col++).Value = o.TotalAmount;
+                    ws.Cell(row, col++).Value = o.ShippingFee;
+                    ws.Cell(row, col++).Value = o.DiscountAmount;
+                    ws.Cell(row, col++).Value = o.FinalAmount;
+
+                    ws.Cell(row, col++).Value = o.OrderItems?.Sum(oi => oi.Quantity) ?? 0;
+                    ws.Cell(row, col++).Value = o.ReceiverName ?? "";
+                    ws.Cell(row, col++).Value = o.ReceiverEmail ?? "";
+                    row++;
+                }
+
+                // --- FORMATTING CUỐI CÙNG ---
+
+                // 1. Kẻ bảng (Borders) cho vùng dữ liệu
+                var dataRange = ws.Range(tableStartRow, 1, row - 1, 10);
+                dataRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+                dataRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+
+                // 2. Format cột Ngày tháng (Cột 2)
+                var dateColumn = ws.Range(tableStartRow + 1, 2, row - 1, 2);
+                dateColumn.Style.DateFormat.Format = "dd/MM/yyyy HH:mm";
+                dateColumn.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+
+                // 3. Format cột Tiền tệ (Cột 4, 5, 6, 7)
+                var moneyRange = ws.Range(tableStartRow + 1, 4, row - 1, 7);
+                moneyRange.Style.NumberFormat.Format = "#,##0";
+
+                // 4. Auto-fit độ rộng cột
+                ws.Columns().AdjustToContents();
+
+                using var ms = new MemoryStream();
+                workbook.SaveAs(ms);
+                return ms.ToArray();
+            }
+            catch (Exception ex)
+            {
+                // Gợi ý: Nên log lỗi ra console hoặc file để debug thay vì im lặng
+                Console.WriteLine(ex.Message);
+                return Array.Empty<byte>();
+            }
+        }
         // HELPER METHODS
-        // ==========================================
 
         private IEnumerable<IGrouping<DateTime, Order>> GroupOrdersByDate(List<Order> orders, string groupBy)
         {
@@ -687,6 +827,20 @@ namespace LVTN_BE_COFFE.Services.Services
                 .Take(count)
                 .ToList();
         }
-        
+
+        // Safe reflection helper to attempt to read Id or fallback
+        private object? GetPropertyValueSafe(object obj, string propName)
+        {
+            try
+            {
+                var prop = obj.GetType().GetProperty(propName);
+                return prop?.GetValue(obj);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
     }
 }
