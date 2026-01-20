@@ -136,27 +136,18 @@ namespace LVTN_BE_COFFE.Controllers
         [HttpPost("{orderId}/return-request")]
         public async Task<IActionResult> RequestReturnOrder(string orderId, [FromForm] ReturnOrderInputModel input)
         {
-            // 1. Lấy UserId chuẩn xác từ Token
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                         ?? User.FindFirst("sub")?.Value
-                         ?? User.FindFirst("UserId")?.Value; // Dự phòng trường hợp bạn đổi cách generate token
+            // Sử dụng method GetIdentity() đã có sẵn thay vì tự viết lại
+            var (userId, guestKey) = GetIdentity();
 
-            // 2. Lấy GuestKey (Ưu tiên Header -> Cookie)
-            string? guestKey = Request.Headers["guestKey"].ToString();
-            if (string.IsNullOrEmpty(guestKey))
-            {
-                guestKey = Request.Cookies["guest_session_id"];
-            }
+            Console.WriteLine($"[DEBUG] RequestReturnOrder -> UserId: {userId} | GuestKey: {guestKey}");
 
-            Console.WriteLine($"[DEBUG] Check Identity -> UserId: {userId} | GuestKey: {guestKey}");
-
-            // 3. Kiểm tra chặn lỗi
+            // Kiểm tra chặn lỗi
             if (string.IsNullOrEmpty(userId) && string.IsNullOrEmpty(guestKey))
             {
-                return Unauthorized(new { IsSuccess = false, Message = "Không xác định được danh tính khách hàng (Thiếu Token hoặc Header guestKey)." });
+                return Unauthorized(new { IsSuccess = false, Message = "Không xác định được danh tính khách hàng (Thiếu Token hoặc Header X-Guest-Key)." });
             }
 
-            // 4. Gọi Service
+            // Gọi Service
             var result = await _orderService.RequestReturnOrder(orderId, userId, guestKey, input);
 
             if (result.Result is OkObjectResult okResult) return Ok(okResult.Value);
