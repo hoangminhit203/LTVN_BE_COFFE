@@ -29,7 +29,7 @@ namespace LVTN_BE_COFFE.Domain.Services
             _context.Categories.Add(category);
             await _context.SaveChangesAsync();
 
-            return new SuccessResponseResult(MapToResponse(category), "Category created successfully");
+            return new SuccessResponseResult(MapToResponse(category), "Tạo thành công");
         }
 
         // Update
@@ -37,7 +37,7 @@ namespace LVTN_BE_COFFE.Domain.Services
         {
             var category = await _context.Categories.FindAsync(id);
             if (category == null || category.IsActive != true)
-                return new ErrorResponseResult("Category not found");
+                return new ErrorResponseResult("Không tìm thấy");
 
             category.Name = request.Name;
             category.Description = request.Description;
@@ -46,7 +46,7 @@ namespace LVTN_BE_COFFE.Domain.Services
 
             await _context.SaveChangesAsync();
 
-            return new SuccessResponseResult(MapToResponse(category), "Category updated successfully");
+            return new SuccessResponseResult(MapToResponse(category), "Cập nhật thành công");
         }
 
         // Soft Delete (Set IsActive to false)
@@ -54,14 +54,14 @@ namespace LVTN_BE_COFFE.Domain.Services
         {
             var category = await _context.Categories.FindAsync(id);
             if (category == null)
-                return new ErrorResponseResult("Category not found");
+                return new ErrorResponseResult("Không tìm thấy");
 
             // Soft delete by setting IsActive to false
             category.IsActive = false;
             category.UpdatedDate = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
-            return new SuccessResponseResult(true, "Category deleted successfully");
+            return new SuccessResponseResult(true, "Xóa thành công");
         }
 
         // Get by ID (only active)
@@ -72,9 +72,9 @@ namespace LVTN_BE_COFFE.Domain.Services
                 .FirstOrDefaultAsync(c => c.Id == id && c.IsActive == true); // Only active category
 
             if (category == null)
-                return new ErrorResponseResult("Category not found");
+                return new ErrorResponseResult("Không tìm thấy");
 
-            return new SuccessResponseResult(MapToResponse(category), "Category retrieved successfully");
+            return new SuccessResponseResult(MapToResponse(category), "Lấy dữ liệu thành công");
         }
 
         // Get all with pagination + filter (only active)
@@ -104,7 +104,7 @@ namespace LVTN_BE_COFFE.Domain.Services
                 Records = items.Select(MapToResponse).ToList()
             };
 
-            return new SuccessResponseResult(paginationResponse, "Categories retrieved successfully");
+            return new SuccessResponseResult(paginationResponse, "Lấy dữ liệu thành công");
         }
         public async Task<ActionResult<ResponseResult>> GetProductsByCategoryId(int categoryId, int pageNumber = 1, int pageSize = 10)
         {
@@ -113,7 +113,7 @@ namespace LVTN_BE_COFFE.Domain.Services
                 .FirstOrDefaultAsync(c => c.Id == categoryId);
 
             if (category == null)
-                return new ErrorResponseResult("Category not found");
+                return new ErrorResponseResult("Không tìm thấy");
 
             var productIds = category.Products
                 .Select(p => p.Id)
@@ -128,7 +128,7 @@ namespace LVTN_BE_COFFE.Domain.Services
                     CurrentPage = pageNumber,
                     PageSize = pageSize,
                     Records = new List<object>()
-                }, "No products found in this category");
+                }, "Không tìm thấy sản phẩm");
             }
 
             var query = _context.Products
@@ -180,7 +180,7 @@ namespace LVTN_BE_COFFE.Domain.Services
                 Records = items
             };
 
-            return new SuccessResponseResult(paginationResponse, "Products retrieved successfully");
+            return new SuccessResponseResult(paginationResponse, "Lấy dữ liệu thành công");
         }
 
         // Map entity → response

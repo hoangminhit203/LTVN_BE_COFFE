@@ -68,7 +68,8 @@ namespace LVTN_BE_COFFE.Domain.VModel
     {
         public string? Name { get; set; }
         public string? Origin { get; set; }
-
+        
+        public int? CategoryId { get; set; }
         public decimal? MinPrice { get; set; }
         public decimal? MaxPrice { get; set; }
 

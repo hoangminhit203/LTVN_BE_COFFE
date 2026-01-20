@@ -317,6 +317,10 @@ namespace LVTN_BE_COFFE.Services.Services
 
                 if (!string.IsNullOrEmpty(filter.Origin))
                     query = query.Where(x => x.Variants.Any(v => v.Origin.Contains(filter.Origin)));
+                if (filter.CategoryId.HasValue)
+                {
+                    query = query.Where(x => x.Categories.Any(c => c.Id == filter.CategoryId.Value));
+                }
                 if (filter.MinPrice.HasValue && filter.MaxPrice.HasValue)
                 {
                     query = query.Where(x => x.Variants.Any(v => v.Price >= filter.MinPrice.Value && v.Price <= filter.MaxPrice.Value));
