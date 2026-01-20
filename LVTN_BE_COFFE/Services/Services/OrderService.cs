@@ -288,7 +288,7 @@ public class OrderService : IOrderService
         order.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
-        return new OkObjectResult(new ResponseResult { IsSuccess = true, Message = "Updated Status Success!" });
+        return new OkObjectResult(new ResponseResult { IsSuccess = true, Message = "Cập nhật trạng thái thành công!" });
     }
 
     public async Task<ActionResult<ResponseResult>> CancelOrder(string orderId, string? userId, string? guestKey)
@@ -300,7 +300,7 @@ public class OrderService : IOrderService
                 ((userId != null && o.UserId == userId) || (guestKey != null && o.GuestKey == guestKey)));
 
         if (order == null || order.Status != "pending")
-            return new BadRequestObjectResult(new ResponseResult { IsSuccess = false, Message = "Order cannot be cancelled." });
+            return new BadRequestObjectResult(new ResponseResult { IsSuccess = false, Message = "Đơn hàng không thể hủy." });
 
         foreach (var item in order.OrderItems)
         {

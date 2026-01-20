@@ -24,7 +24,7 @@ namespace LVTN_BE_COFFE.Services.Services
 
             if (existingBrewingMethod != null)
             {
-                return new BadRequestObjectResult(new ErrorResponseResult("Brewing method name already exists"));
+                return new BadRequestObjectResult(new ErrorResponseResult("Đã tồn tại"));
             }
 
             var brewingMethod = new BrewingMethod
@@ -38,7 +38,7 @@ namespace LVTN_BE_COFFE.Services.Services
             _context.BrewingMethods.Add(brewingMethod);
             await _context.SaveChangesAsync();
 
-            return new SuccessResponseResult(MapToResponse(brewingMethod), "Brewing method created successfully");
+            return new SuccessResponseResult(MapToResponse(brewingMethod), "Tạo thành công");
         }
 
         // Update BrewingMethods
@@ -46,7 +46,7 @@ namespace LVTN_BE_COFFE.Services.Services
         {
             var brewingMethod = await _context.BrewingMethods.FindAsync(id);
             if (brewingMethod == null || brewingMethod.IsActive != true)
-                return new ErrorResponseResult("Brewing method not found");
+                return new ErrorResponseResult("Không tìm thấy");
 
             // Check if name already exists for another record
             var existingBrewingMethod = await _context.BrewingMethods
@@ -54,7 +54,7 @@ namespace LVTN_BE_COFFE.Services.Services
 
             if (existingBrewingMethod != null)
             {
-                return new BadRequestObjectResult(new ErrorResponseResult("Brewing method name already exists"));
+                return new BadRequestObjectResult(new ErrorResponseResult("Đã tồn tại"));
             }
 
             brewingMethod.Name = request.Name;
@@ -64,7 +64,7 @@ namespace LVTN_BE_COFFE.Services.Services
 
             await _context.SaveChangesAsync();
 
-            return new SuccessResponseResult(MapToResponse(brewingMethod), "Brewing method updated successfully");
+            return new SuccessResponseResult(MapToResponse(brewingMethod), "Cập nhật thành công");
         }
 
         // Get by ID
@@ -75,9 +75,9 @@ namespace LVTN_BE_COFFE.Services.Services
                 .FirstOrDefaultAsync(b => b.Id == id && b.IsActive == true);
 
             if (brewingMethod == null)
-                return new ErrorResponseResult("Brewing method not found");
+                return new ErrorResponseResult("Không tìm thấy");
 
-            return new SuccessResponseResult(MapToResponse(brewingMethod), "Brewing method retrieved successfully");
+            return new SuccessResponseResult(MapToResponse(brewingMethod), "Lấy dữ liệu thành công");
         }
 
         // Soft Delete
@@ -85,14 +85,14 @@ namespace LVTN_BE_COFFE.Services.Services
         {
             var brewingMethod = await _context.BrewingMethods.FindAsync(id);
             if (brewingMethod == null)
-                return new ErrorResponseResult("Brewing method not found");
+                return new ErrorResponseResult("Không tìm thấy");
 
             // Soft delete by setting IsActive to false
             brewingMethod.IsActive = false;
             brewingMethod.UpdatedDate = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
-            return new SuccessResponseResult(true, "Brewing method deleted successfully");
+            return new SuccessResponseResult(true, "Xóa thành công");
         }
 
         // Get all with pagination + filter (only active)
@@ -122,7 +122,7 @@ namespace LVTN_BE_COFFE.Services.Services
                 Records = items.Select(MapToResponse).ToList()
             };
 
-            return new SuccessResponseResult(paginationResponse, "Brewing methods retrieved successfully");
+            return new SuccessResponseResult(paginationResponse, "Lấy dữ liệu thành công");
         }
 
         // Map entity → response

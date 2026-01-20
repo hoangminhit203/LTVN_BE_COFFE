@@ -24,7 +24,7 @@ namespace LVTN_BE_COFFE.Services.Services
             if (existingFlavorNote != null)
             {
                 // Trả về BadRequest (400) thay vì chỉ ErrorResponseResult
-                return new BadRequestObjectResult(new ErrorResponseResult("Flavor note name already exists"));
+                return new BadRequestObjectResult(new ErrorResponseResult("Đã tồn tại"));
             }
 
             var flavorNote = new FlavorNote
@@ -37,7 +37,7 @@ namespace LVTN_BE_COFFE.Services.Services
             _context.FlavorNotes.Add(flavorNote);
             await _context.SaveChangesAsync();
 
-            return new SuccessResponseResult(MapToResponse(flavorNote), "Flavor note created successfully");
+            return new SuccessResponseResult(MapToResponse(flavorNote), "Tạo thành công");
         }
 
         // ✅ Update FlavorNotes
@@ -45,7 +45,7 @@ namespace LVTN_BE_COFFE.Services.Services
         {
             var flavorNote = await _context.FlavorNotes.FindAsync(id);
             if (flavorNote == null || flavorNote.IsActive != true)
-                return new ErrorResponseResult("Flavor note not found");
+                return new ErrorResponseResult("Không tìm thấy");
 
             flavorNote.Name = request.Name;
             flavorNote.IsActive = true;
@@ -53,7 +53,7 @@ namespace LVTN_BE_COFFE.Services.Services
 
             await _context.SaveChangesAsync();
 
-            return new SuccessResponseResult(MapToResponse(flavorNote), "Flavor note updated successfully");
+            return new SuccessResponseResult(MapToResponse(flavorNote), "Cập nhật thành công");
         }
 
         // ✅ Get by ID (only active)
@@ -64,9 +64,9 @@ namespace LVTN_BE_COFFE.Services.Services
                 .FirstOrDefaultAsync(f => f.Id == id && f.IsActive == true);
 
             if (flavorNote == null)
-                return new ErrorResponseResult("Flavor note not found");
+                return new ErrorResponseResult("Không tìm thấy");
 
-            return new SuccessResponseResult(MapToResponse(flavorNote), "Flavor note retrieved successfully");
+            return new SuccessResponseResult(MapToResponse(flavorNote), "Lấy dữ liệu thành công");
         }
 
         // ✅ Soft Delete (Set IsActive to false)
@@ -74,14 +74,14 @@ namespace LVTN_BE_COFFE.Services.Services
         {
             var flavorNote = await _context.FlavorNotes.FindAsync(id);
             if (flavorNote == null)
-                return new ErrorResponseResult("Flavor note not found");
+                return new ErrorResponseResult("Không tìm thấy");
 
             // Soft delete by setting IsActive to false
             flavorNote.IsActive = false;
             flavorNote.UpdatedDate = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
-            return new SuccessResponseResult(true, "Flavor note deleted successfully");
+            return new SuccessResponseResult(true, "Xóa thành công");
         }
 
         // ✅ Get all with pagination + filter (only active)
@@ -111,7 +111,7 @@ namespace LVTN_BE_COFFE.Services.Services
                 Records = items.Select(MapToResponse).ToList()
             };
 
-            return new SuccessResponseResult(paginationResponse, "Flavor notes retrieved successfully");
+            return new SuccessResponseResult(paginationResponse, "Lấy dữ liệu thành công");
         }
 
         // ✅ Map entity → response
